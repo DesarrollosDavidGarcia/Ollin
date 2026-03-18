@@ -1,0 +1,652 @@
+@model MatchDetailViewModel
+@{
+    ViewData["Title"] = Model.MatchName;
+    ViewData["ActiveNav"] = "Dashboard";
+    var teams = Model.MatchName.Split(new[] { " vs " }, StringSplitOptions.None);
+    var homeTeam = teams.Length > 0 ? teams[0].Trim() : "Local";
+    var awayTeam = teams.Length > 1 ? teams[1].Trim() : "Visitante";
+    var homeInitial = homeTeam.Length > 0 ? homeTeam[0].ToString().ToUpper() : "?";
+    var awayInitial = awayTeam.Length > 0 ? awayTeam[0].ToString().ToUpper() : "?";
+}
+
+@section Styles {
+    <style>
+        .match-header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255,107,43,0.05) 50%, var(--bg-card) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .match-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #DC2626, var(--accent));
+        }
+
+        .team-avatar-lg {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.8rem;
+        }
+
+        .vs-divider {
+            position: relative;
+        }
+        .vs-divider::before,
+        .vs-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 60px;
+            height: 1px;
+            background: var(--border-color);
+        }
+        .vs-divider::before { right: 100%; margin-right: 1rem; }
+        .vs-divider::after { left: 100%; margin-left: 1rem; }
+
+        .edge-analysis-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .edge-analysis-card:hover {
+            border-color: rgba(255,107,43,0.3);
+        }
+        .edge-analysis-card .edge-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .edge-analysis-card .edge-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+        }
+        .edge-analysis-card .edge-signal {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .ci-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            position: relative;
+            margin-top: 0.5rem;
+            overflow: visible;
+        }
+        .ci-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            position: absolute;
+            top: 0;
+            transition: all 0.5s ease;
+        }
+        .ci-bar-marker {
+            position: absolute;
+            top: -3px;
+            width: 3px;
+            height: 14px;
+            border-radius: 2px;
+            background: white;
+        }
+
+        .accordion-dark .accordion-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px !important;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+        }
+        .accordion-dark .accordion-button {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: none;
+            padding: 1rem 1.25rem;
+        }
+        .accordion-dark .accordion-button::after {
+            filter: invert(0.6);
+        }
+        .accordion-dark .accordion-button:not(.collapsed) {
+            background: rgba(255,107,43,0.05);
+            color: var(--accent);
+        }
+        .accordion-dark .accordion-body {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            padding: 1.25rem;
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-size: 0.9rem;
+        }
+
+        .engine-output-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .engine-output-toggle {
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+        .engine-output-toggle:hover {
+            background: rgba(255,107,43,0.03);
+        }
+        .engine-output-body {
+            padding: 1.25rem;
+            border-top: 1px solid var(--border-color);
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            background: var(--bg-secondary);
+        }
+
+        .odds-comparison-row {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .odds-comparison-row:last-child { border-bottom: none; }
+        .odds-source-name {
+            width: 130px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .odds-values {
+            display: flex;
+            flex: 1;
+            gap: 0.5rem;
+        }
+        .odds-cell {
+            flex: 1;
+            text-align: center;
+            padding: 0.4rem 0.5rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .odds-cell-highlight {
+            background: rgba(255,107,43,0.1);
+            color: var(--accent);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+            margin-bottom: 0.5rem;
+        }
+        .back-button:hover {
+            color: var(--accent);
+        }
+    </style>
+}
+
+<section class="py-5">
+    <div class="container">
+        <!-- Back Button -->
+        <a asp-action="Jornada" asp-route-jornada="@Model.Jornada" class="back-button">
+            <i class="bi bi-arrow-left"></i> Volver a @Model.Jornada
+        </a>
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb" style="--bs-breadcrumb-divider-color: var(--text-secondary);">
+                <li class="breadcrumb-item">
+                    <a asp-action="Index" style="color: var(--text-secondary); text-decoration: none;">Dashboard</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a asp-action="Jornada" asp-route-jornada="@Model.Jornada" style="color: var(--text-secondary); text-decoration: none;">@Model.Jornada</a>
+                </li>
+                <li class="breadcrumb-item active" style="color: var(--accent);">@Model.MatchName</li>
+            </ol>
+        </nav>
+
+        <!-- Match Header -->
+        <div class="match-header">
+            <div class="row align-items-center text-center">
+                <div class="col-md-4">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="team-avatar-lg mb-2" style="background: rgba(255,107,43,0.12); color: var(--accent);">@homeInitial</div>
+                        <h3 class="fw-bold mb-1">@homeTeam</h3>
+                        <span class="badge badge-accent px-3 py-1">Local</span>
+                    </div>
+                </div>
+                <div class="col-md-4 py-3 py-md-0">
+                    <div class="vs-divider d-inline-block">
+                        <span class="display-6 fw-bold" style="color: var(--text-secondary);">VS</span>
+                    </div>
+                    <div class="mt-2">
+                        <div class="small" style="color: var(--text-secondary);">
+                            <i class="bi bi-calendar3 me-1"></i>@Model.AnalysisDate.ToString("dd MMM yyyy HH:mm")
+                        </div>
+                        <div class="small mt-1" style="color: var(--text-secondary);">
+                            <i class="bi bi-tag me-1"></i>@Model.Jornada
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="team-avatar-lg mb-2" style="background: rgba(220,38,38,0.12); color: #DC2626;">@awayInitial</div>
+                        <h3 class="fw-bold mb-1">@awayTeam</h3>
+                        <span class="badge bg-secondary px-3 py-1">Visitante</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kill Switch Alert -->
+        @if (Model.KillSwitch)
+        {
+            <div class="alert border-0 mb-4 d-flex align-items-center"
+                 style="background: linear-gradient(90deg, rgba(220,38,38,0.08), rgba(220,38,38,0.02)); color: #DC2626; border-left: 4px solid #DC2626 !important; border-radius: 12px;">
+                <i class="bi bi-shield-exclamation fs-3 me-3"></i>
+                <div>
+                    <strong>Kill Switch Activado</strong>
+                    <div class="small">Este partido fue bloqueado por el motor estadistico. No se recomienda apostar.</div>
+                </div>
+            </div>
+        }
+
+        <!-- Edge Analysis Cards -->
+        <h5 class="fw-bold mb-3"><i class="bi bi-crosshair me-2" style="color: var(--accent);"></i>Analisis de Edge</h5>
+        <div class="row g-4 mb-4">
+            @{
+                var edges = new[] {
+                    (Label: "Local (1)", Value: Model.EdgeHome, Id: "Home"),
+                    (Label: "Empate (X)", Value: Model.EdgeDraw, Id: "Draw"),
+                    (Label: "Visitante (2)", Value: Model.EdgeAway, Id: "Away")
+                };
+            }
+            @foreach (var edge in edges)
+            {
+                var edgeVal = edge.Value ?? 0;
+                var edgeColor = edgeVal > 5 ? "#FF6B2B" : edgeVal > 0 ? "#F59E0B" : "#DC2626";
+                var isValueBet = edgeVal > 5;
+                var isStrongValue = edgeVal > 10;
+                <div class="col-md-4">
+                    <div class="edge-analysis-card">
+                        <div class="edge-title">Edge @edge.Label</div>
+                        <div class="edge-value" style="color: @edgeColor;">
+                            @(edge.Value?.ToString("F1") ?? "N/A")%
+                        </div>
+                        <!-- CI Bar placeholder -->
+                        <div class="ci-bar mt-2">
+                            <div class="ci-bar-fill" style="left: 10%; width: @(Math.Min(Math.Max(edgeVal * 3, 5), 80))%; background: linear-gradient(90deg, @(edgeColor)66, @edgeColor);"></div>
+                            <div class="ci-bar-marker" style="left: @(Math.Min(10 + edgeVal * 3, 85))%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small style="color: var(--text-secondary); font-size: 0.7rem;">IC 95%</small>
+                            <small style="color: var(--text-secondary); font-size: 0.7rem;" id="ci@(edge.Id)">--</small>
+                        </div>
+                        <div class="edge-signal">
+                            @if (isStrongValue)
+                            {
+                                <span class="badge" style="background: rgba(255,107,43,0.12); color: #FF6B2B;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Value Bet Fuerte
+                                </span>
+                            }
+                            else if (isValueBet)
+                            {
+                                <span class="badge" style="background: rgba(255,107,43,0.12); color: #FF6B2B;">
+                                    <i class="bi bi-check-circle me-1"></i>Value Bet
+                                </span>
+                            }
+                            else if (edgeVal > 0)
+                            {
+                                <span class="badge" style="background: rgba(245,158,11,0.12); color: #F59E0B;">
+                                    <i class="bi bi-dash-circle me-1"></i>Edge insuficiente
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge" style="background: rgba(220,38,38,0.12); color: #DC2626;">
+                                    <i class="bi bi-x-circle me-1"></i>Sin value
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Radar Chart -->
+            <div class="col-lg-6">
+                <div class="card-dark p-4" style="height: 100%;">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-radar me-2" style="color: var(--accent);"></i>Comparacion de Equipos</h5>
+                    <div style="height: 350px;">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="col-lg-6">
+                <div class="card-dark p-4" style="height: 100%;">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2" style="color: var(--accent);"></i>Metricas Clave</h5>
+                    <div id="metricsContainer">
+                        @{
+                            var metrics = new[] {
+                                ("xG For", "Xg"),
+                                ("PPDA (presion)", "Ppda"),
+                                ("xG Differential", "XgDiff"),
+                                ("Set Piece Goals", "Sp"),
+                                ("Dias de Descanso", "Rest"),
+                                ("Ventaja Local", "Ha")
+                            };
+                        }
+                        @foreach (var (label, key) in metrics)
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small style="color: var(--text-secondary);">@label</small>
+                                    <div>
+                                        <span class="small fw-bold" style="color: var(--accent);" id="metricHome@(key)">-</span>
+                                        <span class="small mx-2" style="color: var(--text-secondary);">vs</span>
+                                        <span class="small fw-bold" style="color: #DC2626;" id="metricAway@(key)">-</span>
+                                    </div>
+                                </div>
+                                <div class="progress" style="height: 6px; background-color: var(--bg-secondary); border-radius: 3px;">
+                                    <div class="progress-bar" id="barHome@(key)" style="width: 50%; background-color: var(--accent); border-radius: 3px 0 0 3px;"></div>
+                                    <div class="progress-bar" id="barAway@(key)" style="width: 50%; background-color: #DC2626; border-radius: 0 3px 3px 0;"></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Comparison -->
+        <div class="card-dark p-4 mb-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-currency-exchange me-2" style="color: var(--accent);"></i>Comparacion de Mercado</h5>
+            <div class="px-2">
+                <!-- Header -->
+                <div class="d-flex align-items-center pb-2 mb-2" style="border-bottom: 2px solid var(--border-color);">
+                    <div class="odds-source-name" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Fuente</div>
+                    <div class="odds-values">
+                        <div class="odds-cell" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">1 (Local)</div>
+                        <div class="odds-cell" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">X (Empate)</div>
+                        <div class="odds-cell" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">2 (Visitante)</div>
+                    </div>
+                </div>
+                <div id="marketRows">
+                    <div class="text-center py-3" style="color: var(--text-secondary);">
+                        Datos de mercado disponibles en el JSON del motor.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Motor Estadistico (expandable) -->
+        @if (Model.EngineResultJson != null)
+        {
+            <div class="engine-output-section mb-4">
+                <div class="engine-output-toggle" onclick="toggleEngineOutput()">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-cpu me-2" style="color: var(--accent);"></i>Motor Estadistico (Raw Output)</h5>
+                    <i class="bi bi-chevron-down" id="engineToggleIcon" style="color: var(--text-secondary); transition: transform 0.3s ease;"></i>
+                </div>
+                <div class="engine-output-body" id="engineOutputBody" style="display: none;">@Model.EngineResultJson</div>
+            </div>
+        }
+
+        <!-- Agent Reports -->
+        <h5 class="fw-bold mb-3"><i class="bi bi-robot me-2" style="color: var(--accent);"></i>Reportes de Agentes</h5>
+        <div class="accordion accordion-dark mb-4" id="agentAccordion">
+            @if (!string.IsNullOrEmpty(Model.Agent4Report))
+            {
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#agentReport4">
+                            <i class="bi bi-file-earmark-text me-2" style="color: var(--accent);"></i>
+                            Agent 4: Reporte Ejecutivo
+                        </button>
+                    </h2>
+                    <div id="agentReport4" class="accordion-collapse collapse show" data-bs-parent="#agentAccordion">
+                        <div class="accordion-body">@Model.Agent4Report</div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card-dark p-4 text-center">
+                    <i class="bi bi-inbox display-6 d-block mb-2" style="color: var(--border-color);"></i>
+                    <p class="mb-0" style="color: var(--text-secondary);">No hay reportes de agentes disponibles para este partido.</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+        // Toggle engine output
+        function toggleEngineOutput() {
+            const body = document.getElementById('engineOutputBody');
+            const icon = document.getElementById('engineToggleIcon');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                body.style.display = 'none';
+                icon.style.transform = 'rotate(0)';
+            }
+        }
+
+        // Parse engine result JSON if available
+        const engineJson = @Html.Raw(Model.EngineResultJson != null ? $"JSON.parse('{System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.EngineResultJson)}')" : "null");
+
+        const homeName = '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(homeTeam))';
+        const awayName = '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(awayTeam))';
+
+        // Radar Chart - 6 axes: xG, PPDA, H2H, Set Pieces, Rest, Home Advantage
+        const radarCtx = document.getElementById('radarChart')?.getContext('2d');
+        if (radarCtx) {
+            let homeData = [50, 50, 50, 50, 50, 50];
+            let awayData = [50, 50, 50, 50, 50, 50];
+            const labels = ['xG For', 'PPDA', 'H2H', 'Set Pieces', 'Descanso', 'Ventaja Local'];
+
+            if (engineJson && engineJson.local && engineJson.visitante) {
+                const h = engineJson.local;
+                const a = engineJson.visitante;
+
+                // xG: scale 0-3 to 0-100
+                homeData[0] = Math.min((h.xgFor || 0) / 3 * 100, 100);
+                awayData[0] = Math.min((a.xgFor || 0) / 3 * 100, 100);
+
+                // PPDA: lower is better, scale 5-20 inverted to 0-100
+                homeData[1] = Math.max(Math.min((20 - (h.ppda || 10)) / 15 * 100, 100), 0);
+                awayData[1] = Math.max(Math.min((20 - (a.ppda || 10)) / 15 * 100, 100), 0);
+
+                // H2H: wins out of total
+                var hTotal = (h.h2hWins || 0) + (h.h2hDraws || 0) + (h.h2hLosses || 0) || 1;
+                var aTotal = (a.h2hWins || 0) + (a.h2hDraws || 0) + (a.h2hLosses || 0) || 1;
+                homeData[2] = Math.min((h.h2hWins || 0) / hTotal * 100, 100);
+                awayData[2] = Math.min((a.h2hWins || 0) / aTotal * 100, 100);
+
+                // Set Pieces: scale 0-10 to 0-100
+                homeData[3] = Math.min((h.setPieceGoals || 0) / 10 * 100, 100);
+                awayData[3] = Math.min((a.setPieceGoals || 0) / 10 * 100, 100);
+
+                // Rest: scale 0-14 to 0-100
+                homeData[4] = Math.min((h.daysRest || 0) / 14 * 100, 100);
+                awayData[4] = Math.min((a.daysRest || 0) / 14 * 100, 100);
+
+                // Home Advantage: direct percentage
+                homeData[5] = Math.min(h.homeAdvantageBase || 50, 100);
+                awayData[5] = Math.min(a.homeAdvantageBase || 50, 100);
+            }
+
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: homeName,
+                            data: homeData,
+                            borderColor: '#FF6B2B',
+                            backgroundColor: 'rgba(255, 107, 43, 0.15)',
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#FF6B2B',
+                            pointBorderColor: '#FFFFFF',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        },
+                        {
+                            label: awayName,
+                            data: awayData,
+                            borderColor: '#DC2626',
+                            backgroundColor: 'rgba(220, 38, 38, 0.12)',
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#DC2626',
+                            pointBorderColor: '#FFFFFF',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { display: false, stepSize: 20 },
+                            grid: { color: '#E2E8F0' },
+                            pointLabels: { color: '#64748B', font: { size: 11, weight: '500' } },
+                            angleLines: { color: '#E2E8F0' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#64748B', font: { size: 12 }, usePointStyle: true, pointStyle: 'circle' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Populate metrics if engine data available
+        if (engineJson && engineJson.local && engineJson.visitante) {
+            const h = engineJson.local;
+            const a = engineJson.visitante;
+
+            function setMetric(key, hVal, aVal) {
+                const elH = document.getElementById('metricHome' + key);
+                const elA = document.getElementById('metricAway' + key);
+                const barH = document.getElementById('barHome' + key);
+                const barA = document.getElementById('barAway' + key);
+                if (!elH || !elA || !barH || !barA) return;
+
+                if (typeof hVal === 'number') elH.textContent = Number.isInteger(hVal) ? hVal : hVal.toFixed(2);
+                else elH.textContent = hVal;
+                if (typeof aVal === 'number') elA.textContent = Number.isInteger(aVal) ? aVal : aVal.toFixed(2);
+                else elA.textContent = aVal;
+
+                const total = Math.abs(parseFloat(hVal) || 0) + Math.abs(parseFloat(aVal) || 0) || 1;
+                barH.style.width = (Math.abs(parseFloat(hVal) || 0) / total * 100) + '%';
+                barA.style.width = (Math.abs(parseFloat(aVal) || 0) / total * 100) + '%';
+            }
+
+            setMetric('Xg', h.xgFor || 0, a.xgFor || 0);
+            setMetric('Ppda', h.ppda || 0, a.ppda || 0);
+            setMetric('XgDiff', h.xgDifferential || 0, a.xgDifferential || 0);
+            setMetric('Sp', h.setPieceGoals || 0, a.setPieceGoals || 0);
+            setMetric('Rest', h.daysRest || 0, a.daysRest || 0);
+            setMetric('Ha', h.homeAdvantageBase || 0, a.homeAdvantageBase || 0);
+
+            // Market data
+            if (engineJson.market) {
+                const m = engineJson.market;
+                const container = document.getElementById('marketRows');
+
+                function oddsRow(name, h, d, aw, highlightBest) {
+                    const isH = highlightBest && m.bestOddsHome == h;
+                    const isD = highlightBest && m.bestOddsDraw == d;
+                    const isA = highlightBest && m.bestOddsAway == aw;
+                    return `<div class="odds-comparison-row">
+                        <div class="odds-source-name">${name}</div>
+                        <div class="odds-values">
+                            <div class="odds-cell ${isH ? 'odds-cell-highlight' : ''}">${h || '-'}</div>
+                            <div class="odds-cell ${isD ? 'odds-cell-highlight' : ''}">${d || '-'}</div>
+                            <div class="odds-cell ${isA ? 'odds-cell-highlight' : ''}">${aw || '-'}</div>
+                        </div>
+                    </div>`;
+                }
+
+                container.innerHTML =
+                    oddsRow('Pinnacle', m.pinnacleHome, m.pinnacleDraw, m.pinnacleAway, false) +
+                    oddsRow(`Best Odds`, m.bestOddsHome, m.bestOddsDraw, m.bestOddsAway, true) +
+                    `<div class="odds-comparison-row">
+                        <div class="odds-source-name" style="font-size: 0.75rem; color: var(--text-secondary);">Fuentes</div>
+                        <div class="odds-values">
+                            <div class="odds-cell" style="font-size: 0.75rem; color: var(--text-secondary);">${m.bestOddsHomeSource || '-'}</div>
+                            <div class="odds-cell" style="font-size: 0.75rem; color: var(--text-secondary);">${m.bestOddsDrawSource || '-'}</div>
+                            <div class="odds-cell" style="font-size: 0.75rem; color: var(--text-secondary);">${m.bestOddsAwaySource || '-'}</div>
+                        </div>
+                    </div>` +
+                    `<div class="odds-comparison-row">
+                        <div class="odds-source-name">SBO Asian HC</div>
+                        <div class="odds-values">
+                            <div class="odds-cell" colspan="3" style="flex: 3; color: var(--text-primary);">${m.sboHandicapDirection || ''} ${m.sboAsianHandicap || '-'}</div>
+                        </div>
+                    </div>` +
+                    `<div class="odds-comparison-row">
+                        <div class="odds-source-name">Betfair Volume</div>
+                        <div class="odds-values">
+                            <div class="odds-cell" style="flex: 3; color: ${(m.betfairVolume || 0) >= 30000 ? 'var(--accent)' : '#DC2626'}; font-weight: 700;">
+                                ${(m.betfairVolume || 0).toLocaleString()} EUR
+                                ${(m.betfairVolume || 0) < 30000 ? '<small style="color: #DC2626; font-weight: 400;"> (bajo minimo)</small>' : ''}
+                            </div>
+                        </div>
+                    </div>` +
+                    `<div class="odds-comparison-row">
+                        <div class="odds-source-name">Line Movement</div>
+                        <div class="odds-values">
+                            <div class="odds-cell" style="color: ${Math.abs(m.lineMovementHome || 0) > 15 ? '#DC2626' : 'var(--text-primary)'};">${(m.lineMovementHome || 0) > 0 ? '+' : ''}${(m.lineMovementHome || 0).toFixed(1)}%</div>
+                            <div class="odds-cell" style="color: ${Math.abs(m.lineMovementDraw || 0) > 15 ? '#DC2626' : 'var(--text-primary)'};">${(m.lineMovementDraw || 0) > 0 ? '+' : ''}${(m.lineMovementDraw || 0).toFixed(1)}%</div>
+                            <div class="odds-cell" style="color: ${Math.abs(m.lineMovementAway || 0) > 15 ? '#DC2626' : 'var(--text-primary)'};">${(m.lineMovementAway || 0) > 0 ? '+' : ''}${(m.lineMovementAway || 0).toFixed(1)}%</div>
+                        </div>
+                    </div>`;
+            }
+        }
+    </script>
+}

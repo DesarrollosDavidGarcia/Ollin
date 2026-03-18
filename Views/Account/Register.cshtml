@@ -1,0 +1,283 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Registrarse";
+    ViewData["ActiveNav"] = "Register";
+}
+
+@section Styles {
+<style>
+    .auth-wrapper {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+    }
+    .brand-panel {
+        background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 50%, rgba(255, 107, 43, 0.1) 100%);
+        border: 1px solid var(--border-color);
+        border-radius: 16px 0 0 16px;
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 600px;
+        position: relative;
+        overflow: hidden;
+    }
+    .brand-panel::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle at 70% 30%, rgba(255, 107, 43, 0.08) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    .form-panel {
+        border-radius: 0 16px 16px 0;
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .benefit-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .benefit-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 107, 43, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: var(--accent);
+    }
+    .password-strength {
+        height: 4px;
+        border-radius: 2px;
+        background: var(--border-color);
+        margin-top: 0.5rem;
+        overflow: hidden;
+        transition: all 0.3s var(--ease-smooth);
+    }
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        border-radius: 2px;
+        transition: all 0.3s var(--ease-smooth);
+    }
+    .password-strength-label {
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        transition: color 0.3s var(--ease-smooth);
+    }
+    .validation-error {
+        background-color: rgba(220, 38, 38, 0.06);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: #DC2626;
+        font-size: 0.85rem;
+    }
+    .tos-check {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+    }
+    @@media (max-width: 991.98px) {
+        .brand-panel {
+            display: none !important;
+        }
+        .form-panel {
+            border-radius: 16px;
+        }
+    }
+</style>
+}
+
+<section class="auth-wrapper py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="row g-0">
+                    <!-- Brand Panel (hidden on mobile) -->
+                    <div class="col-lg-5 d-none d-lg-flex">
+                        <div class="brand-panel w-100">
+                            <h3 class="fw-bold mb-2" style="color: var(--accent);">
+                                <i class="bi bi-graph-up-arrow me-2"></i>Ollin
+                            </h3>
+                            <p class="mb-4" style="color: var(--text-secondary); font-size: 0.95rem;">
+                                Unete a la comunidad de analisis cuantitativo mas avanzada para Liga MX.
+                            </p>
+
+                            <div class="benefit-item">
+                                <div class="benefit-icon">
+                                    <i class="bi bi-bar-chart-line"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Dashboard Premium</h6>
+                                    <p class="small mb-0" style="color: var(--text-secondary);">
+                                        Accede a analisis en tiempo real, metricas avanzadas y reportes ejecutivos por jornada.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="benefit-item">
+                                <div class="benefit-icon">
+                                    <i class="bi bi-cpu"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Motor Estadistico C#</h6>
+                                    <p class="small mb-0" style="color: var(--text-secondary);">
+                                        Calculos deterministicos: percentiles, Edge, IC 95%, Kelly fraccional y kill switch automatico.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="benefit-item">
+                                <div class="benefit-icon">
+                                    <i class="bi bi-bell"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Alertas y Backtesting</h6>
+                                    <p class="small mb-0" style="color: var(--text-secondary);">
+                                        Notificaciones de value bets detectados y seguimiento historico con hit rate y ROI.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Panel -->
+                    <div class="col-lg-7">
+                        <div class="card-dark form-panel p-4 p-lg-5">
+                            <div class="text-center mb-4 d-lg-none">
+                                <h4 class="fw-bold mb-1" style="color: var(--accent);">
+                                    <i class="bi bi-graph-up-arrow me-2"></i>Ollin
+                                </h4>
+                            </div>
+                            <h4 class="fw-bold mb-1">Crea tu cuenta</h4>
+                            <p class="mb-4" style="color: var(--text-secondary); font-size: 0.9rem;">
+                                Empieza gratis y accede a contenido exclusivo
+                            </p>
+
+                            <div asp-validation-summary="ModelOnly" class="validation-error mb-3"></div>
+
+                            <form asp-action="Register" method="post">
+                                <div class="mb-3">
+                                    <label asp-for="DisplayName" class="form-label small fw-bold" style="color: var(--text-secondary);">Nombre</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-secondary);">
+                                            <i class="bi bi-person"></i>
+                                        </span>
+                                        <input asp-for="DisplayName" class="form-control" placeholder="Tu nombre" autocomplete="name" />
+                                    </div>
+                                    <span asp-validation-for="DisplayName" class="text-danger small"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label small fw-bold" style="color: var(--text-secondary);">Email</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-secondary);">
+                                            <i class="bi bi-envelope"></i>
+                                        </span>
+                                        <input asp-for="Email" class="form-control" placeholder="tu@email.com" autocomplete="email" />
+                                    </div>
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Password" class="form-label small fw-bold" style="color: var(--text-secondary);">Contrasena</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-secondary);">
+                                            <i class="bi bi-lock"></i>
+                                        </span>
+                                        <input asp-for="Password" class="form-control" placeholder="Minimo 8 caracteres" autocomplete="new-password" id="passwordInput" />
+                                    </div>
+                                    <div class="password-strength">
+                                        <div class="password-strength-bar" id="strengthBar"></div>
+                                    </div>
+                                    <div class="password-strength-label" id="strengthLabel" style="color: var(--text-secondary);">&nbsp;</div>
+                                    <span asp-validation-for="Password" class="text-danger small"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="ConfirmPassword" class="form-label small fw-bold" style="color: var(--text-secondary);">Confirmar Contrasena</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-secondary);">
+                                            <i class="bi bi-lock-fill"></i>
+                                        </span>
+                                        <input asp-for="ConfirmPassword" class="form-control" placeholder="Repite la contrasena" autocomplete="new-password" />
+                                    </div>
+                                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Terms of Service -->
+                                <div class="mb-4 tos-check">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="tosCheckbox" required />
+                                        <label class="form-check-label small" for="tosCheckbox" style="color: var(--text-secondary);">
+                                            Acepto los <a asp-controller="Home" asp-action="Terms" class="text-decoration-none">Terminos de Servicio</a>
+                                            y la <a asp-controller="Home" asp-action="Privacy" class="text-decoration-none">Politica de Privacidad</a>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-accent w-100 py-2 mb-3 fw-bold">
+                                    <i class="bi bi-person-plus me-2"></i>Crear Cuenta
+                                </button>
+                            </form>
+
+                            <div class="text-center mt-3">
+                                <p class="small mb-0" style="color: var(--text-secondary);">
+                                    Ya tienes cuenta?
+                                    <a asp-action="Login" class="text-decoration-none fw-semibold">Inicia sesion</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    (function () {
+        var input = document.getElementById('passwordInput');
+        var bar = document.getElementById('strengthBar');
+        var label = document.getElementById('strengthLabel');
+        if (!input || !bar || !label) return;
+
+        input.addEventListener('input', function () {
+            var val = input.value;
+            var score = 0;
+            if (val.length >= 8) score++;
+            if (val.length >= 12) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            var levels = [
+                { width: '0%', color: 'var(--border-color)', text: '' },
+                { width: '20%', color: '#ff4757', text: 'Muy debil' },
+                { width: '40%', color: '#ff6348', text: 'Debil' },
+                { width: '60%', color: '#ffa502', text: 'Regular' },
+                { width: '80%', color: '#2ed573', text: 'Fuerte' },
+                { width: '100%', color: 'var(--accent)', text: 'Muy fuerte' }
+            ];
+
+            var lvl = levels[score] || levels[0];
+            bar.style.width = lvl.width;
+            bar.style.backgroundColor = lvl.color;
+            label.textContent = val.length > 0 ? lvl.text : '\u00A0';
+            label.style.color = lvl.color;
+        });
+    })();
+</script>
+}

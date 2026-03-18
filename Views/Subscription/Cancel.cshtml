@@ -1,0 +1,143 @@
+@{
+    ViewData["Title"] = "Suscripcion Cancelada";
+}
+
+@section Styles {
+    <style>
+        .cancel-container {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cancel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            max-width: 520px;
+            width: 100%;
+        }
+
+        .cancel-icon-wrap {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: rgba(139, 148, 158, 0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            animation: gentlePulse 3s ease-in-out infinite;
+        }
+        @@keyframes gentlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .benefits-lost {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        .benefit-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .benefit-item i {
+            color: #DC2626;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .change-mind-btn {
+            background: linear-gradient(135deg, var(--accent), #E85A1B);
+            color: #FFFFFF;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            padding: 0.85rem 2.5rem;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .change-mind-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255,107,43,0.3);
+            color: #FFFFFF;
+        }
+    </style>
+}
+
+<section class="cancel-container py-5">
+    <div class="container">
+        <div class="d-flex justify-content-center">
+            <div class="cancel-card animate-fade-in">
+                <div class="cancel-icon-wrap">
+                    <i class="bi bi-pause-circle display-4" style="color: var(--text-secondary);"></i>
+                </div>
+
+                <h2 class="fw-bold mb-2">Proceso Pausado</h2>
+                <p style="color: var(--text-secondary); font-size: 1.05rem;" class="mb-0">
+                    No se realizo ningun cargo a tu cuenta. Entendemos que puede no ser el momento adecuado.
+                </p>
+
+                <!-- What they'll miss -->
+                <div class="benefits-lost">
+                    <div class="small fw-bold mb-2" style="color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                        Lo que incluye Premium
+                    </div>
+                    <div class="benefit-item">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Dashboard con metricas de rendimiento en tiempo real</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Analisis por jornada con Edge y value bets detectados</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Backtesting historico verificable (hit rate + ROI)</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Motor estadistico C# con 8 percentiles y bootstrap IC 95%</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>19 fuentes de datos por partido, 4 agentes de validacion</span>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    <a asp-controller="Home" asp-action="Index" asp-fragment="pricing" class="change-mind-btn">
+                        <i class="bi bi-arrow-repeat me-2"></i>Cambiar de opinion
+                    </a>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-accent btn-sm">
+                            <i class="bi bi-house me-1"></i>Inicio
+                        </a>
+                        <a asp-controller="Blog" asp-action="Index" class="btn btn-outline-accent btn-sm">
+                            <i class="bi bi-journal-text me-1"></i>Blog (gratis)
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3" style="border-top: 1px solid var(--border-color);">
+                    <small style="color: var(--text-secondary);">
+                        <i class="bi bi-shield-check me-1"></i>Puedes suscribirte en cualquier momento. Sin compromisos.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

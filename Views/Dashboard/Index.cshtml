@@ -1,0 +1,520 @@
+@model DashboardOverviewViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActiveNav"] = "Dashboard";
+    var userName = User.Identity?.Name ?? User.Claims.FirstOrDefault(c => c.Type == "name")?.Value ?? "Apostador";
+    var today = DateTime.Now;
+    var wonCount = Model.RecentPlays.Count(p => p.Won == true);
+    var lostCount = Model.RecentPlays.Count(p => p.Won == false);
+    var pendingCount = Model.RecentPlays.Count(p => p.Won == null);
+}
+
+@section Styles {
+    <style>
+        .greeting-section {
+            padding: 2rem 0 0.5rem;
+        }
+        .greeting-date {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .stat-card-gradient-1 { background: linear-gradient(135deg, rgba(255,107,43,0.12) 0%, var(--bg-card) 60%); }
+        .stat-card-gradient-2 { background: linear-gradient(135deg, rgba(220,38,38,0.12) 0%, var(--bg-card) 60%); }
+        .stat-card-gradient-3 { background: linear-gradient(135deg, rgba(255,193,7,0.12) 0%, var(--bg-card) 60%); }
+        .stat-card-gradient-4 { background: linear-gradient(135deg, rgba(167,139,250,0.12) 0%, var(--bg-card) 60%); }
+
+        .stat-card .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.4rem;
+        }
+        .trend-up { color: #16A34A; }
+        .trend-down { color: #DC2626; }
+        .trend-neutral { color: var(--text-secondary); }
+        .trend-arrow-up {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 6px solid #16A34A;
+        }
+        .trend-arrow-down {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 6px solid #DC2626;
+        }
+        .trend-arrow-neutral {
+            display: inline-block;
+            width: 8px;
+            height: 2px;
+            background: var(--text-secondary);
+        }
+
+        .play-row {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .play-row:hover {
+            background-color: rgba(255, 107, 43, 0.08) !important;
+        }
+
+        .proxima-jornada-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255,107,43,0.06) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .proxima-jornada-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(255,107,43,0.08) 0%, transparent 70%);
+        }
+
+        .quick-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.3s var(--ease-smooth);
+            width: 100%;
+        }
+        .quick-action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .quick-action-btn .qa-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        .empty-state-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255,107,43,0.08);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .pnl-chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .chart-legend-custom {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+        }
+        .chart-legend-custom span {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--text-secondary);
+        }
+        .chart-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+}
+
+@if (Model.TotalPlays == 0 && !Model.RecentPlays.Any())
+{
+    <!-- Empty State -->
+    <section class="py-5">
+        <div class="container">
+            <div class="card-dark p-0">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-speedometer2 display-4" style="color: var(--accent);"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3">Bienvenido a tu Dashboard</h2>
+                    <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 2rem;">
+                        Aun no hay datos de analisis. Cuando el sistema procese su primera jornada,
+                        aqui veras tu rendimiento, plays activos, y metricas de ROI en tiempo real.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a asp-action="Backtesting" class="btn btn-outline-accent">
+                            <i class="bi bi-clipboard-data me-2"></i>Ver Backtesting
+                        </a>
+                        <a asp-controller="Blog" asp-action="Index" class="btn btn-outline-accent">
+                            <i class="bi bi-journal-text me-2"></i>Leer Blog
+                        </a>
+                    </div>
+                    <div class="mt-5 pt-3" style="border-top: 1px solid var(--border-color); max-width: 500px; margin-left: auto; margin-right: auto;">
+                        <p class="small mb-2" style="color: var(--text-secondary);">El sistema analiza automaticamente:</p>
+                        <div class="d-flex justify-content-center gap-4 flex-wrap">
+                            <span class="small" style="color: var(--text-secondary);"><i class="bi bi-check-circle me-1" style="color: var(--accent);"></i>19 fuentes por partido</span>
+                            <span class="small" style="color: var(--text-secondary);"><i class="bi bi-check-circle me-1" style="color: var(--accent);"></i>Motor C# deterministico</span>
+                            <span class="small" style="color: var(--text-secondary);"><i class="bi bi-check-circle me-1" style="color: var(--accent);"></i>4 agentes de validacion</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+else
+{
+    <!-- Greeting -->
+    <section class="greeting-section">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+                <div>
+                    <h1 class="fw-bold mb-1">Bienvenido, @userName</h1>
+                    <p class="greeting-date mb-0">
+                        <i class="bi bi-calendar3 me-1"></i>@today.ToString("dddd, dd 'de' MMMM yyyy", new System.Globalization.CultureInfo("es-MX"))
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a asp-action="Backtesting" class="btn btn-outline-accent btn-sm">
+                        <i class="bi bi-clipboard-data me-1"></i>Backtesting
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-4">
+        <div class="container">
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3 col-6">
+                    <div class="stat-card stat-card-gradient-1">
+                        <div class="stat-label mb-2"><i class="bi bi-lightning-charge me-1"></i>Plays Activos</div>
+                        <div class="stat-value">@Model.ActivePlaysCount</div>
+                        <div class="trend-indicator trend-neutral">
+                            <span class="trend-arrow-neutral"></span> en curso
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card stat-card-gradient-2">
+                        <div class="stat-label mb-2"><i class="bi bi-bullseye me-1"></i>Hit Rate</div>
+                        <div class="stat-value">@Model.HitRate.ToString("F1")%</div>
+                        <div class="trend-indicator @(Model.HitRate >= 55 ? "trend-up" : Model.HitRate >= 45 ? "trend-neutral" : "trend-down")">
+                            @if (Model.HitRate >= 55)
+                            {
+                                <span class="trend-arrow-up"></span> @("positivo")
+                            }
+                            else if (Model.HitRate >= 45)
+                            {
+                                <span class="trend-arrow-neutral"></span> @("estable")
+                            }
+                            else
+                            {
+                                <span class="trend-arrow-down"></span> @("revisar")
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card stat-card-gradient-3">
+                        <div class="stat-label mb-2"><i class="bi bi-graph-up me-1"></i>ROI</div>
+                        <div class="stat-value" style="color: @(Model.Roi >= 0 ? "var(--accent)" : "#DC2626");">
+                            @(Model.Roi >= 0 ? "+" : "")@Model.Roi.ToString("F1")%
+                        </div>
+                        <div class="trend-indicator @(Model.Roi > 0 ? "trend-up" : Model.Roi == 0 ? "trend-neutral" : "trend-down")">
+                            @if (Model.Roi > 0)
+                            {
+                                <span class="trend-arrow-up"></span> @("rentable")
+                            }
+                            else if (Model.Roi == 0)
+                            {
+                                <span class="trend-arrow-neutral"></span> @("break-even")
+                            }
+                            else
+                            {
+                                <span class="trend-arrow-down"></span> @("en rojo")
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card stat-card-gradient-4">
+                        <div class="stat-label mb-2"><i class="bi bi-bar-chart me-1"></i>Total Analizados</div>
+                        <div class="stat-value">@Model.TotalPlays</div>
+                        <div class="trend-indicator trend-neutral">
+                            <span class="trend-arrow-neutral"></span> @wonCount W / @lostCount L / @pendingCount P
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <!-- PnL Chart -->
+                <div class="col-lg-7">
+                    <div class="card-dark p-4" style="height: 100%;">
+                        <div class="pnl-chart-header">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-graph-up me-2" style="color: var(--accent);"></i>Tendencia PnL</h5>
+                            <div class="chart-legend-custom">
+                                <span><span class="chart-legend-dot" style="background: #FF6B2B;"></span> Acumulado</span>
+                                <span><span class="chart-legend-dot" style="background: #DC2626;"></span> Diario</span>
+                            </div>
+                        </div>
+                        <div style="height: 300px;">
+                            <canvas id="pnlChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Plays -->
+                <div class="col-lg-5">
+                    <div class="card-dark p-4" style="height: 100%;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2" style="color: var(--accent);"></i>Plays Recientes</h5>
+                            <span class="badge badge-accent">@Model.RecentPlays.Count</span>
+                        </div>
+                        <div class="table-responsive" style="max-height: 310px; overflow-y: auto;">
+                            @if (Model.RecentPlays.Any())
+                            {
+                                <table class="table table-dark-custom table-sm mb-0">
+                                    <thead>
+                                        <tr style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                                            <th>Partido</th>
+                                            <th>Outcome</th>
+                                            <th class="text-center">Conf.</th>
+                                            <th class="text-end">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var play in Model.RecentPlays.Take(10))
+                                        {
+                                            var confColor = play.Confidence switch
+                                            {
+                                                "high" => "#16A34A",
+                                                "medium" => "#F59E0B",
+                                                _ => "#8b949e"
+                                            };
+                                            <tr class="play-row" onclick="window.location.href='@Url.Action("Match", "Dashboard", new { id = play.PredictionId })'"
+                                                title="@play.MatchName &#10;Edge: @play.Edge.ToString("F1")% | Odds: @play.BestOdds (@play.BestOddsSource) | Kelly: @play.KellyUnits.ToString("F2")u">
+                                                <td class="text-truncate" style="max-width: 120px;">
+                                                    @play.MatchName
+                                                </td>
+                                                <td>@play.Outcome</td>
+                                                <td class="text-center">
+                                                    <span class="badge" style="background-color: @(confColor)20; color: @confColor;">
+                                                        @play.Confidence
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">
+                                                    @if (play.Won == true)
+                                                    {
+                                                        <span class="badge" style="background-color: rgba(22, 163, 74, 0.12); color: #16A34A;">
+                                                            <i class="bi bi-check-lg"></i> Won
+                                                        </span>
+                                                    }
+                                                    else if (play.Won == false)
+                                                    {
+                                                        <span class="badge" style="background-color: rgba(220, 38, 38, 0.12); color: #DC2626;">
+                                                            <i class="bi bi-x-lg"></i> Lost
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge" style="background-color: rgba(255, 193, 7, 0.15); color: #ffc107;">
+                                                            <i class="bi bi-hourglass-split"></i> Pending
+                                                        </span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <i class="bi bi-inbox display-6 mb-2 d-block" style="color: var(--border-color);"></i>
+                                    <p class="mb-0 small" style="color: var(--text-secondary);">Sin plays registrados aun.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Proxima Jornada -->
+                <div class="col-lg-7">
+                    <div class="proxima-jornada-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-calendar-event me-2" style="color: var(--accent);"></i>Proxima Jornada</h5>
+                            <span class="badge badge-accent">Clausura 2026</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-4">
+                                <div class="small" style="color: var(--text-secondary);">Jornada</div>
+                                <div class="fw-bold">Pendiente de analisis</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small" style="color: var(--text-secondary);">Partidos</div>
+                                <div class="fw-bold">9 partidos</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small" style="color: var(--text-secondary);">Status</div>
+                                <div class="fw-bold" style="color: #ffc107;">
+                                    <i class="bi bi-clock me-1"></i>Esperando imagen
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
+                            <small style="color: var(--text-secondary);">
+                                <i class="bi bi-info-circle me-1"></i>El analisis comienza al subir la imagen de la jornada al sistema Tlatoani.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="col-lg-5">
+                    <div class="d-flex flex-column gap-3">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-zap me-2" style="color: var(--accent);"></i>Acciones Rapidas</h5>
+                        <a asp-action="Backtesting" class="quick-action-btn">
+                            <div class="qa-icon" style="background: rgba(255,107,43,0.12);">
+                                <i class="bi bi-clipboard-data" style="color: var(--accent);"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Backtesting</div>
+                                <small style="color: var(--text-secondary);">Rendimiento historico verificable</small>
+                            </div>
+                            <i class="bi bi-chevron-right ms-auto" style="color: var(--text-secondary);"></i>
+                        </a>
+                        <a asp-controller="Blog" asp-action="Index" class="quick-action-btn">
+                            <div class="qa-icon" style="background: rgba(220,38,38,0.12);">
+                                <i class="bi bi-journal-richtext" style="color: #DC2626;"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Blog de Analisis</div>
+                                <small style="color: var(--text-secondary);">Articulos y metodologia</small>
+                            </div>
+                            <i class="bi bi-chevron-right ms-auto" style="color: var(--text-secondary);"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+        const ctx = document.getElementById('pnlChart')?.getContext('2d');
+        if (ctx) {
+            // Gradient fill for cumulative line
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(255, 107, 43, 0.25)');
+            gradient.addColorStop(0.5, 'rgba(255, 107, 43, 0.08)');
+            gradient.addColorStop(1, 'rgba(255, 107, 43, 0)');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Inicio'],
+                    datasets: [
+                        {
+                            label: 'PnL Acumulado (u)',
+                            data: [0],
+                            type: 'line',
+                            borderColor: '#FF6B2B',
+                            backgroundColor: gradient,
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#FF6B2B',
+                            pointBorderColor: '#FFFFFF',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 6,
+                            order: 0,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'PnL Diario (u)',
+                            data: [0],
+                            backgroundColor: 'rgba(220, 38, 38, 0.4)',
+                            borderColor: '#DC2626',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            order: 1,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            borderColor: '#E2E8F0',
+                            borderWidth: 1,
+                            titleColor: '#1E293B',
+                            bodyColor: '#64748B',
+                            cornerRadius: 8,
+                            padding: 12
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#64748B', font: { size: 11 } },
+                            grid: { color: '#E2E8F0', drawBorder: false }
+                        },
+                        y: {
+                            position: 'left',
+                            ticks: { color: '#64748B', font: { size: 11 } },
+                            grid: { color: '#E2E8F0', drawBorder: false }
+                        },
+                        y1: {
+                            position: 'right',
+                            ticks: { color: '#64748B', font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,264 @@
+@{
+    ViewData["Title"] = "Mi Perfil";
+    ViewData["ActiveNav"] = "Profile";
+    var userName = User.Identity?.Name ?? "Usuario";
+    var email = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
+    var hasSubscription = ViewData["HasSubscription"] as bool? ?? false;
+    var subscriptionEnd = ViewData["SubscriptionEnd"] as DateTime?;
+    var isActive = hasSubscription && subscriptionEnd.HasValue && subscriptionEnd.Value > DateTime.UtcNow;
+    var memberSince = ViewData["MemberSince"]?.ToString() ?? DateTime.UtcNow.ToString("MMM yyyy");
+}
+
+@section Styles {
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255, 107, 43, 0.06) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255, 107, 43, 0.15), rgba(255, 107, 43, 0.05));
+        border: 3px solid rgba(255, 107, 43, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: var(--accent);
+    }
+    .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        position: relative;
+    }
+    .status-dot.active {
+        background: var(--accent);
+        box-shadow: 0 0 8px rgba(255, 107, 43, 0.5);
+    }
+    .status-dot.active::after {
+        content: '';
+        position: absolute;
+        inset: -3px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 107, 43, 0.3);
+        animation: statusPulse 2s ease-in-out infinite;
+    }
+    .status-dot.expired {
+        background: #ff4757;
+        box-shadow: 0 0 8px rgba(255, 71, 87, 0.3);
+    }
+    @@keyframes statusPulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.3); opacity: 0; }
+    }
+    .info-grid-item {
+        padding: 1rem;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+    }
+    .action-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--text-primary);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s var(--ease-smooth);
+    }
+    .action-link:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(255, 107, 43, 0.04);
+    }
+    .action-link .action-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    .action-link.danger:hover {
+        border-color: #ff4757;
+        color: #ff4757;
+        background: rgba(255, 71, 87, 0.04);
+    }
+</style>
+}
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <!-- Profile Header -->
+                <div class="profile-header mb-4">
+                    <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4">
+                        <div class="profile-avatar">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div class="text-center text-sm-start">
+                            <h2 class="fw-bold mb-1">@userName</h2>
+                            <p class="mb-2" style="color: var(--text-secondary);">
+                                <i class="bi bi-envelope me-1"></i>@email
+                            </p>
+                            <div class="d-flex align-items-center justify-content-center justify-content-sm-start gap-2">
+                                @if (isActive)
+                                {
+                                    <span class="badge badge-accent px-3 py-2">
+                                        <span class="status-dot active"></span>Premium
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary px-3 py-2">
+                                        <span class="status-dot expired"></span>Gratuita
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Activity & Info -->
+                    <div class="col-md-6">
+                        <div class="card-dark p-4 h-100">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-activity me-2" style="color: var(--accent);"></i>Actividad
+                            </h6>
+                            <div class="d-flex flex-column gap-3">
+                                <div class="info-grid-item">
+                                    <div class="small" style="color: var(--text-secondary);">Miembro desde</div>
+                                    <div class="fw-bold">@memberSince</div>
+                                </div>
+                                <div class="info-grid-item">
+                                    <div class="small" style="color: var(--text-secondary);">Ultimo acceso</div>
+                                    <div class="fw-bold">@DateTime.UtcNow.ToString("dd MMM yyyy, HH:mm")</div>
+                                </div>
+                                <div class="info-grid-item">
+                                    <div class="small" style="color: var(--text-secondary);">Tipo de cuenta</div>
+                                    <div class="fw-bold">
+                                        @if (isActive)
+                                        {
+                                            <span style="color: var(--accent);">Premium</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: var(--text-secondary);">Gratuita</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subscription -->
+                    <div class="col-md-6">
+                        <div class="card-dark p-4 h-100">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-credit-card me-2" style="color: var(--accent);"></i>Suscripcion
+                            </h6>
+                            @if (isActive)
+                            {
+                                <div class="d-flex align-items-center mb-3 p-3 rounded"
+                                     style="background-color: rgba(255, 107, 43, 0.08); border: 1px solid rgba(255, 107, 43, 0.2);">
+                                    <i class="bi bi-check-circle-fill me-3 fs-4" style="color: var(--accent);"></i>
+                                    <div>
+                                        <div class="fw-bold">Plan Premium Activo</div>
+                                        <small style="color: var(--text-secondary);">
+                                            Vence el @subscriptionEnd?.ToString("dd MMMM yyyy")
+                                        </small>
+                                    </div>
+                                </div>
+                                <a asp-controller="Subscription" asp-action="Manage" class="btn btn-outline-accent w-100">
+                                    <i class="bi bi-gear me-2"></i>Gestionar Suscripcion
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center mb-3 p-3 rounded"
+                                     style="background-color: rgba(139, 148, 158, 0.08); border: 1px solid var(--border-color);">
+                                    <i class="bi bi-info-circle me-3 fs-4" style="color: var(--text-secondary);"></i>
+                                    <div>
+                                        <div class="fw-bold">Sin suscripcion activa</div>
+                                        <small style="color: var(--text-secondary);">
+                                            Accede al Dashboard Premium y analisis completos.
+                                        </small>
+                                    </div>
+                                </div>
+                                <a asp-controller="Home" asp-action="Index" asp-fragment="pricing" class="btn btn-accent w-100">
+                                    <i class="bi bi-rocket-takeoff me-2"></i>Suscribirme - $299 MXN/mes
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Actions -->
+                <div class="card-dark p-4 mt-4">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-gear me-2" style="color: var(--accent);"></i>Acciones de Cuenta
+                    </h6>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="#" class="action-link">
+                            <div class="action-icon" style="background: rgba(255, 107, 43, 0.1); color: var(--accent);">
+                                <i class="bi bi-key"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold small">Cambiar contrasena</div>
+                                <div class="small" style="color: var(--text-secondary);">Actualiza tu contrasena de acceso</div>
+                            </div>
+                            <i class="bi bi-chevron-right ms-auto" style="color: var(--text-secondary);"></i>
+                        </a>
+                        <a href="#" class="action-link">
+                            <div class="action-icon" style="background: rgba(255, 107, 43, 0.1); color: var(--accent);">
+                                <i class="bi bi-bell"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold small">Notificaciones</div>
+                                <div class="small" style="color: var(--text-secondary);">Gestiona tus preferencias de alertas</div>
+                            </div>
+                            <i class="bi bi-chevron-right ms-auto" style="color: var(--text-secondary);"></i>
+                        </a>
+                        <a href="#" class="action-link danger">
+                            <div class="action-icon" style="background: rgba(255, 71, 87, 0.1); color: #ff4757;">
+                                <i class="bi bi-trash3"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold small">Eliminar cuenta</div>
+                                <div class="small" style="color: var(--text-secondary);">Elimina permanentemente tu cuenta y datos</div>
+                            </div>
+                            <i class="bi bi-chevron-right ms-auto" style="color: var(--text-secondary);"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,221 @@
+@{
+    ViewData["Title"] = "Suscripcion Exitosa";
+}
+
+@section Styles {
+    <style>
+        .success-container {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            max-width: 520px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        .success-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), #DC2626, var(--accent));
+        }
+
+        /* Checkmark animation */
+        .checkmark-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .checkmark-circle .circle-bg {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(22, 163, 74, 0.12);
+            animation: circleScale 0.6s ease-out both;
+        }
+        .checkmark-circle .circle-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid var(--accent);
+            animation: ringDraw 0.8s ease-out 0.3s both;
+            opacity: 0;
+        }
+        .checkmark-circle .checkmark-icon {
+            font-size: 2.5rem;
+            color: var(--accent);
+            animation: checkPop 0.4s ease-out 0.7s both;
+            opacity: 0;
+        }
+
+        @@keyframes circleScale {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @@keyframes ringDraw {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @@keyframes checkPop {
+            0% { opacity: 0; transform: scale(0.3); }
+            60% { transform: scale(1.15); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Confetti particles */
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            top: -10px;
+            animation: confettiFall 3s ease-in-out forwards;
+            opacity: 0;
+        }
+        @@keyframes confettiFall {
+            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+            25% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(500px) rotate(720deg); }
+        }
+
+        .next-steps {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+        .next-step-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .next-step-item:last-child {
+            border-bottom: none;
+        }
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,107,43,0.12);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+    </style>
+}
+
+<section class="success-container py-5">
+    <div class="container">
+        <div class="d-flex justify-content-center">
+            <div class="success-card animate-fade-in">
+                <!-- Confetti -->
+                <div class="confetti-container" id="confettiContainer"></div>
+
+                <!-- Checkmark -->
+                <div class="checkmark-circle">
+                    <div class="circle-bg"></div>
+                    <div class="circle-ring"></div>
+                    <i class="bi bi-check-lg checkmark-icon"></i>
+                </div>
+
+                <h2 class="fw-bold mb-2">Suscripcion Activada</h2>
+                <p style="color: var(--text-secondary); font-size: 1.05rem;" class="mb-0">
+                    Tu suscripcion Premium esta activa. Ya tienes acceso completo al Dashboard,
+                    analisis por jornada y backtesting historico.
+                </p>
+
+                <!-- Next Steps -->
+                <div class="next-steps">
+                    <div class="small fw-bold mb-2" style="color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                        Siguientes pasos
+                    </div>
+                    <div class="next-step-item">
+                        <div class="step-number">1</div>
+                        <div>
+                            <div class="fw-bold" style="font-size: 0.9rem;">Explora tu Dashboard</div>
+                            <small style="color: var(--text-secondary);">Revisa metricas de rendimiento y plays activos</small>
+                        </div>
+                    </div>
+                    <div class="next-step-item">
+                        <div class="step-number">2</div>
+                        <div>
+                            <div class="fw-bold" style="font-size: 0.9rem;">Consulta el Backtesting</div>
+                            <small style="color: var(--text-secondary);">Verifica el track record historico del sistema</small>
+                        </div>
+                    </div>
+                    <div class="next-step-item">
+                        <div class="step-number">3</div>
+                        <div>
+                            <div class="fw-bold" style="font-size: 0.9rem;">Lee el Blog</div>
+                            <small style="color: var(--text-secondary);">Aprende sobre la metodologia y fundamentos estadisticos</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mt-4">
+                    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-accent btn-lg px-5">
+                        <i class="bi bi-speedometer2 me-2"></i>Ir al Dashboard
+                    </a>
+                    <a asp-controller="Blog" asp-action="Index" class="btn btn-outline-accent">
+                        <i class="bi bi-journal-text me-2"></i>Explorar Blog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // Generate confetti particles
+        (function() {
+            const container = document.getElementById('confettiContainer');
+            const colors = ['#FF6B2B', '#DC2626', '#F59E0B', '#16A34A', '#a78bfa', '#FF6B2B'];
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = (Math.random() * 1.5 + 0.3) + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                confetti.style.width = (Math.random() * 6 + 4) + 'px';
+                confetti.style.height = (Math.random() * 6 + 4) + 'px';
+                container.appendChild(confetti);
+            }
+        })();
+    </script>
+}

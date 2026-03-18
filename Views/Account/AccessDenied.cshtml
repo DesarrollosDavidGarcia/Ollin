@@ -1,0 +1,197 @@
+@{
+    ViewData["Title"] = "Acceso Restringido";
+}
+
+@section Styles {
+<style>
+    .access-denied-wrapper {
+        min-height: calc(100vh - 250px);
+        display: flex;
+        align-items: center;
+    }
+    .lock-icon-wrapper {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255, 107, 43, 0.12), rgba(255, 107, 43, 0.04));
+        border: 2px solid rgba(255, 107, 43, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+    .lock-icon-wrapper i {
+        font-size: 2.5rem;
+        color: var(--accent);
+    }
+    .feature-missing {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        margin-bottom: 0.5rem;
+    }
+    .feature-missing i {
+        color: var(--accent);
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    .comparison-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+    .comparison-table th,
+    .comparison-table td {
+        padding: 0.75rem 1rem;
+        text-align: center;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.9rem;
+    }
+    .comparison-table th {
+        background: var(--bg-secondary);
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .comparison-table th.premium-col {
+        color: var(--accent);
+    }
+    .comparison-table td:first-child {
+        text-align: left;
+        color: var(--text-secondary);
+    }
+    .comparison-table tr:last-child td {
+        border-bottom: none;
+    }
+    .comparison-table tbody tr {
+        background: var(--bg-card);
+    }
+    .comparison-table .check-yes {
+        color: var(--accent);
+    }
+    .comparison-table .check-no {
+        color: var(--text-secondary);
+        opacity: 0.4;
+    }
+</style>
+}
+
+<section class="access-denied-wrapper py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="card-dark p-4 p-lg-5">
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <div class="lock-icon-wrapper">
+                            <i class="bi bi-lock-fill"></i>
+                        </div>
+                        <h2 class="fw-bold mb-2">Contenido Premium</h2>
+                        <p style="color: var(--text-secondary); font-size: 1.05rem; max-width: 440px; margin: 0 auto;">
+                            Esta seccion es exclusiva para suscriptores. Desbloquea el poder completo de Ollin.
+                        </p>
+                    </div>
+
+                    <!-- Features you're missing -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3 text-center" style="color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Lo que incluye Premium
+                        </h6>
+                        <div class="feature-missing">
+                            <i class="bi bi-speedometer2"></i>
+                            <div>
+                                <div class="fw-semibold small">Dashboard en Tiempo Real</div>
+                                <div class="small" style="color: var(--text-secondary);">Analisis por jornada con value bets, Edge y kill switch</div>
+                            </div>
+                        </div>
+                        <div class="feature-missing">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <div>
+                                <div class="fw-semibold small">Motor Estadistico C#</div>
+                                <div class="small" style="color: var(--text-secondary);">8 percentiles, IC 95% bootstrap, Kelly fraccional</div>
+                            </div>
+                        </div>
+                        <div class="feature-missing">
+                            <i class="bi bi-clipboard-data"></i>
+                            <div>
+                                <div class="fw-semibold small">Backtesting y ROI</div>
+                                <div class="small" style="color: var(--text-secondary);">Seguimiento historico de plays con hit rate verificado</div>
+                            </div>
+                        </div>
+                        <div class="feature-missing">
+                            <i class="bi bi-bell"></i>
+                            <div>
+                                <div class="fw-semibold small">Alertas de Value Bets</div>
+                                <div class="small" style="color: var(--text-secondary);">Notificaciones cuando se detectan ineficiencias de mercado</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comparison Table -->
+                    <div class="mb-4">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left;">Caracteristica</th>
+                                    <th>Gratis</th>
+                                    <th class="premium-col">Premium</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Blog y contenido educativo</td>
+                                    <td><i class="bi bi-check-circle-fill check-yes"></i></td>
+                                    <td><i class="bi bi-check-circle-fill check-yes"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Dashboard de analisis</td>
+                                    <td><i class="bi bi-x-circle check-no"></i></td>
+                                    <td><i class="bi bi-check-circle-fill check-yes"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Value Bets en tiempo real</td>
+                                    <td><i class="bi bi-x-circle check-no"></i></td>
+                                    <td><i class="bi bi-check-circle-fill check-yes"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Reportes ejecutivos</td>
+                                    <td><i class="bi bi-x-circle check-no"></i></td>
+                                    <td><i class="bi bi-check-circle-fill check-yes"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Backtesting + ROI</td>
+                                    <td><i class="bi bi-x-circle check-no"></i></td>
+                                    <td><i class="bi bi-check-circle-fill check-yes"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Alertas y notificaciones</td>
+                                    <td><i class="bi bi-x-circle check-no"></i></td>
+                                    <td><i class="bi bi-check-circle-fill check-yes"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- CTA -->
+                    <div class="text-center">
+                        <a asp-controller="Home" asp-action="Index" asp-fragment="pricing" class="btn btn-accent btn-lg px-5 mb-3">
+                            <i class="bi bi-rocket-takeoff me-2"></i>Suscribirme - $299 MXN/mes
+                        </a>
+                        <br />
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-accent btn-sm">
+                            <i class="bi bi-house me-2"></i>Volver al Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

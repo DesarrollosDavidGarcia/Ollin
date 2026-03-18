@@ -1,0 +1,342 @@
+@model JornadaViewModel
+@{
+    ViewData["Title"] = Model.JornadaName;
+    ViewData["ActiveNav"] = "Dashboard";
+    var totalMatches = Model.Matches.Count;
+    var activePlays = Model.Matches.Count(m => m.HasActivePlays);
+    var killSwitchCount = Model.Matches.Count(m => m.KillSwitch);
+    var globalKillSwitch = killSwitchCount > totalMatches / 2;
+    // totalCapitalPct and expectedReturn will be populated when data is available
+}
+
+@section Styles {
+    <style>
+        .jornada-summary-bar {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255,107,43,0.04) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .jornada-summary-bar .summary-item {
+            text-align: center;
+            min-width: 100px;
+        }
+        .jornada-summary-bar .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .jornada-summary-bar .summary-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kill-switch-global-banner {
+            background: linear-gradient(90deg, rgba(220,38,38,0.15) 0%, rgba(220,38,38,0.05) 100%);
+            border: 1px solid rgba(220,38,38,0.4);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: pulseRed 2s ease-in-out infinite;
+        }
+        @@keyframes pulseRed {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+            50% { box-shadow: 0 0 20px rgba(220,38,38,0.15); }
+        }
+
+        .match-card-enhanced {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s var(--ease-smooth);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        .match-card-enhanced:hover {
+            border-color: rgba(255,107,43,0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+            color: inherit;
+        }
+        .match-card-enhanced .card-accent-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .team-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .edge-meter {
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-secondary);
+            overflow: hidden;
+            position: relative;
+        }
+        .edge-meter-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .jornada-selector {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.4rem 2rem 0.4rem 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            appearance: auto;
+        }
+        .jornada-selector:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255,107,43,0.25);
+        }
+
+        .export-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .export-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
+}
+
+<section class="py-5">
+    <div class="container">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2" style="--bs-breadcrumb-divider-color: var(--text-secondary);">
+                        <li class="breadcrumb-item">
+                            <a asp-action="Index" style="color: var(--text-secondary); text-decoration: none;">Dashboard</a>
+                        </li>
+                        <li class="breadcrumb-item active" style="color: var(--accent);">@Model.JornadaName</li>
+                    </ol>
+                </nav>
+                <h1 class="fw-bold mb-0">@Model.JornadaName</h1>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <select class="jornada-selector" title="Seleccionar jornada (proximamente)">
+                    <option selected>@Model.JornadaName</option>
+                    <option disabled>Jornada 1</option>
+                    <option disabled>Jornada 2</option>
+                    <option disabled>Jornada 3</option>
+                </select>
+                <button class="export-btn" title="Exportar reporte (proximamente)" onclick="alert('Exportar reporte: proximamente')">
+                    <i class="bi bi-download me-1"></i>Exportar
+                </button>
+            </div>
+        </div>
+
+        <!-- Global Kill Switch Banner -->
+        @if (globalKillSwitch)
+        {
+            <div class="kill-switch-global-banner">
+                <i class="bi bi-shield-exclamation fs-3" style="color: #DC2626;"></i>
+                <div>
+                    <strong style="color: #DC2626;">Kill Switch Global Activado</strong>
+                    <div class="small" style="color: var(--text-secondary);">
+                        @killSwitchCount de @totalMatches partidos tienen kill switch activo. Se recomienda no operar esta jornada.
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Summary Stats Bar -->
+        <div class="jornada-summary-bar">
+            <div class="summary-item">
+                <div class="summary-value">@totalMatches</div>
+                <div class="summary-label">Partidos</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value" style="color: @(activePlays > 0 ? "var(--accent)" : "var(--text-secondary)");">@activePlays</div>
+                <div class="summary-label">Plays Activos</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value" style="color: @(killSwitchCount > 0 ? "#DC2626" : "var(--text-secondary)");">@killSwitchCount</div>
+                <div class="summary-label">Kill Switches</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">--</div>
+                <div class="summary-label">Capital %</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">--</div>
+                <div class="summary-label">Retorno Esp.</div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="card-dark p-3 mb-4">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <span class="fw-bold small" style="color: var(--text-secondary);">SEMAFORO:</span>
+                <span class="d-flex align-items-center gap-1">
+                    <span class="rounded-circle d-inline-block" style="width: 12px; height: 12px; background-color: #FF6B2B;"></span>
+                    <small style="color: var(--text-secondary);">Edge alto (&ge;10%)</small>
+                </span>
+                <span class="d-flex align-items-center gap-1">
+                    <span class="rounded-circle d-inline-block" style="width: 12px; height: 12px; background-color: #F59E0B;"></span>
+                    <small style="color: var(--text-secondary);">Edge moderado (5-10%)</small>
+                </span>
+                <span class="d-flex align-items-center gap-1">
+                    <span class="rounded-circle d-inline-block" style="width: 12px; height: 12px; background-color: #DC2626;"></span>
+                    <small style="color: var(--text-secondary);">Kill switch activado</small>
+                </span>
+                <span class="d-flex align-items-center gap-1">
+                    <span class="rounded-circle d-inline-block" style="width: 12px; height: 12px; background-color: #6c757d;"></span>
+                    <small style="color: var(--text-secondary);">Sin value bet</small>
+                </span>
+            </div>
+        </div>
+
+        <!-- Match Cards -->
+        @if (Model.Matches.Any())
+        {
+            <div class="row g-4">
+                @foreach (var match in Model.Matches)
+                {
+                    var trafficColor = match.TrafficLight switch
+                    {
+                        "green" => "#FF6B2B",
+                        "yellow" => "#F59E0B",
+                        "red" => "#DC2626",
+                        _ => "#6c757d"
+                    };
+                    var teams = match.MatchName.Split(new[] { " vs " }, StringSplitOptions.None);
+                    var homeTeam = teams.Length > 0 ? teams[0].Trim() : match.MatchName;
+                    var awayTeam = teams.Length > 1 ? teams[1].Trim() : "";
+                    var homeInitial = homeTeam.Length > 0 ? homeTeam[0].ToString().ToUpper() : "?";
+                    var awayInitial = awayTeam.Length > 0 ? awayTeam[0].ToString().ToUpper() : "?";
+                    var maxEdge = new[] { match.EdgeHome ?? 0, match.EdgeDraw ?? 0, match.EdgeAway ?? 0 }.Max();
+                    var edgePct = Math.Min(maxEdge / 20.0 * 100, 100);
+
+                    <div class="col-md-6 col-lg-4">
+                        <a asp-action="Match" asp-route-id="@match.AnalysisId" class="match-card-enhanced">
+                            <div class="card-accent-bar" style="background: linear-gradient(90deg, @trafficColor, transparent);"></div>
+
+                            <!-- Teams -->
+                            <div class="d-flex align-items-center gap-3 mb-3 mt-1">
+                                <div class="team-avatar" style="background: rgba(255,107,43,0.12); color: var(--accent);">@homeInitial</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold" style="font-size: 0.95rem; color: var(--text-primary);">@homeTeam</div>
+                                    <div class="small" style="color: var(--text-secondary);">vs</div>
+                                    <div class="fw-bold" style="font-size: 0.95rem; color: var(--text-primary);">@awayTeam</div>
+                                </div>
+                                <div class="team-avatar" style="background: rgba(255,193,7,0.12); color: #ffc107;">@awayInitial</div>
+                            </div>
+
+                            <!-- Edge Values -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-4 text-center">
+                                    <div class="small" style="color: var(--text-secondary); font-size: 0.7rem;">EDGE 1</div>
+                                    <div class="fw-bold" style="font-size: 0.95rem; color: @(match.EdgeHome > 5 ? "#FF6B2B" : "var(--text-primary)");">
+                                        @(match.EdgeHome?.ToString("F1") ?? "-")%
+                                    </div>
+                                </div>
+                                <div class="col-4 text-center" style="border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);">
+                                    <div class="small" style="color: var(--text-secondary); font-size: 0.7rem;">EDGE X</div>
+                                    <div class="fw-bold" style="font-size: 0.95rem; color: @(match.EdgeDraw > 5 ? "#FF6B2B" : "var(--text-primary)");">
+                                        @(match.EdgeDraw?.ToString("F1") ?? "-")%
+                                    </div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="small" style="color: var(--text-secondary); font-size: 0.7rem;">EDGE 2</div>
+                                    <div class="fw-bold" style="font-size: 0.95rem; color: @(match.EdgeAway > 5 ? "#FF6B2B" : "var(--text-primary)");">
+                                        @(match.EdgeAway?.ToString("F1") ?? "-")%
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Edge Meter -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small style="color: var(--text-secondary); font-size: 0.7rem;">EDGE MAX</small>
+                                    <small style="color: @trafficColor; font-weight: 600;">@maxEdge.ToString("F1")%</small>
+                                </div>
+                                <div class="edge-meter">
+                                    <div class="edge-meter-fill" style="width: @edgePct.ToString("F0")%; background: linear-gradient(90deg, @trafficColor, @(trafficColor)88);"></div>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                @if (match.KillSwitch)
+                                {
+                                    <span class="badge" style="background-color: rgba(220, 38, 38, 0.12); color: #DC2626;">
+                                        <i class="bi bi-shield-x me-1"></i>Kill Switch
+                                    </span>
+                                }
+                                else if (match.HasActivePlays)
+                                {
+                                    <span class="badge badge-accent">
+                                        <i class="bi bi-lightning-charge me-1"></i>Play Activo
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background-color: rgba(108, 117, 125, 0.15); color: #6c757d;">
+                                        Sin play
+                                    </span>
+                                }
+                                <small style="color: var(--accent); font-weight: 500;">
+                                    Ver detalle <i class="bi bi-arrow-right"></i>
+                                </small>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="card-dark p-5 text-center">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(108,117,125,0.1); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                    <i class="bi bi-calendar-x display-4" style="color: var(--border-color);"></i>
+                </div>
+                <h4 class="fw-bold mb-2">Sin partidos en esta jornada</h4>
+                <p style="color: var(--text-secondary);" class="mb-3">No hay analisis disponibles para esta jornada.</p>
+                <a asp-action="Index" class="btn btn-outline-accent btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+                </a>
+            </div>
+        }
+    </div>
+</section>

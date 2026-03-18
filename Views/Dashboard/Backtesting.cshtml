@@ -1,0 +1,625 @@
+@model BacktestingViewModel
+@{
+    ViewData["Title"] = "Backtesting";
+    ViewData["ActiveNav"] = "Dashboard";
+    var wonCount = Model.PnLSeries.Count(p => p.DailyPnL > 0);
+    var lostCount = Model.PnLSeries.Count(p => p.DailyPnL < 0);
+    // Calculate streak from series
+    var streakType = "none";
+    var streakCount = 0;
+    foreach (var p in Model.PnLSeries.OrderByDescending(p => p.Date))
+    {
+        if (streakCount == 0)
+        {
+            streakType = p.DailyPnL >= 0 ? "win" : "loss";
+            streakCount = 1;
+        }
+        else if ((streakType == "win" && p.DailyPnL >= 0) || (streakType == "loss" && p.DailyPnL < 0))
+        {
+            streakCount++;
+        }
+        else break;
+    }
+}
+
+@section Styles {
+    <style>
+        .bt-stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .bt-stat-card .stat-accent-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+        .bt-stat-card .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        .bt-stat-card .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .bt-stat-card .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+        .trend-up { color: #16A34A; }
+        .trend-down { color: #DC2626; }
+        .trend-neutral { color: var(--text-secondary); }
+        .trend-arrow-up {
+            display: inline-block; width: 0; height: 0;
+            border-left: 4px solid transparent; border-right: 4px solid transparent;
+            border-bottom: 6px solid #16A34A;
+        }
+        .trend-arrow-down {
+            display: inline-block; width: 0; height: 0;
+            border-left: 4px solid transparent; border-right: 4px solid transparent;
+            border-top: 6px solid #DC2626;
+        }
+
+        .streak-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .chart-control-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .chart-control-btn:hover,
+        .chart-control-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .filter-bar select,
+        .filter-bar input {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 6px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
+        }
+        .filter-bar select:focus,
+        .filter-bar input:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255,107,43,0.2);
+        }
+
+        .confidence-breakdown {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .confidence-breakdown th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .confidence-breakdown td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+        .confidence-breakdown tr:last-child td { border-bottom: none; }
+
+        .export-csv-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .export-csv-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .pnl-row-positive { border-left: 3px solid #FF6B2B; }
+        .pnl-row-negative { border-left: 3px solid #DC2626; }
+    </style>
+}
+
+<section class="py-5">
+    <div class="container">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2" style="--bs-breadcrumb-divider-color: var(--text-secondary);">
+                        <li class="breadcrumb-item">
+                            <a asp-action="Index" style="color: var(--text-secondary); text-decoration: none;">Dashboard</a>
+                        </li>
+                        <li class="breadcrumb-item active" style="color: var(--accent);">Backtesting</li>
+                    </ol>
+                </nav>
+                <h1 class="fw-bold mb-1">Backtesting</h1>
+                <p class="mb-0" style="color: var(--text-secondary);">Rendimiento historico verificable del sistema.</p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                @if (streakCount > 0)
+                {
+                    <div class="streak-badge" style="background: @(streakType == "win" ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.12)"); color: @(streakType == "win" ? "#16A34A" : "#DC2626");">
+                        <i class="bi @(streakType == "win" ? "bi-fire" : "bi-snow")"></i>
+                        @streakCount @(streakType == "win" ? "W" : "L") streak
+                    </div>
+                }
+                <button class="export-csv-btn" onclick="exportCSV()" title="Exportar datos a CSV">
+                    <i class="bi bi-filetype-csv me-1"></i>Exportar CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="bt-stat-card">
+                    <div class="stat-label"><i class="bi bi-hash me-1"></i>Total Predicciones</div>
+                    <div class="stat-value" style="color: var(--text-primary);">@Model.TotalPredictions</div>
+                    <small style="color: var(--text-secondary);">@Model.ResolvedPredictions resueltas</small>
+                    <div class="stat-accent-bar" style="background: linear-gradient(90deg, #FF6B2B, transparent);"></div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="bt-stat-card">
+                    <div class="stat-label"><i class="bi bi-bullseye me-1"></i>Hit Rate</div>
+                    <div class="stat-value" style="color: @(Model.HitRate >= 55 ? "#16A34A" : Model.HitRate >= 45 ? "#F59E0B" : "#DC2626");">
+                        @Model.HitRate.ToString("F1")%
+                    </div>
+                    <div class="trend-indicator @(Model.HitRate >= 55 ? "trend-up" : Model.HitRate >= 45 ? "trend-neutral" : "trend-down")">
+                        @if (Model.HitRate >= 55) { <span class="trend-arrow-up"></span> } else if (Model.HitRate < 45) { <span class="trend-arrow-down"></span> }
+                        @(Model.HitRate >= 55 ? "por encima del benchmark" : Model.HitRate >= 45 ? "en rango esperado" : "por debajo del benchmark")
+                    </div>
+                    <div class="stat-accent-bar" style="background: linear-gradient(90deg, #16A34A, transparent);"></div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="bt-stat-card">
+                    <div class="stat-label"><i class="bi bi-percent me-1"></i>ROI</div>
+                    <div class="stat-value" style="color: @(Model.Roi >= 0 ? "var(--accent)" : "#DC2626");">
+                        @(Model.Roi >= 0 ? "+" : "")@Model.Roi.ToString("F1")%
+                    </div>
+                    <div class="trend-indicator @(Model.Roi > 0 ? "trend-up" : Model.Roi == 0 ? "trend-neutral" : "trend-down")">
+                        @if (Model.Roi > 0) { <span class="trend-arrow-up"></span><text>rentable</text> } else if (Model.Roi < 0) { <span class="trend-arrow-down"></span><text>en rojo</text> } else { <text>break-even</text> }
+                    </div>
+                    <div class="stat-accent-bar" style="background: linear-gradient(90deg, @(Model.Roi >= 0 ? "#FF6B2B" : "#DC2626"), transparent);"></div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="bt-stat-card">
+                    <div class="stat-label"><i class="bi bi-cash-stack me-1"></i>PnL Total</div>
+                    <div class="stat-value" style="color: @(Model.TotalPnL >= 0 ? "var(--accent)" : "#DC2626");">
+                        @(Model.TotalPnL >= 0 ? "+" : "")@Model.TotalPnL.ToString("F2")u
+                    </div>
+                    <div class="trend-indicator trend-neutral">
+                        @wonCount dias positivos / @lostCount dias negativos
+                    </div>
+                    <div class="stat-accent-bar" style="background: linear-gradient(90deg, @(Model.TotalPnL >= 0 ? "#FF6B2B" : "#DC2626"), transparent);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PnL Chart -->
+        <div class="card-dark p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h5 class="fw-bold mb-0"><i class="bi bi-graph-up me-2" style="color: var(--accent);"></i>PnL Acumulado</h5>
+                <div class="chart-controls">
+                    <button class="chart-control-btn active" onclick="setChartView('all', this)">Todo</button>
+                    <button class="chart-control-btn" onclick="setChartView('monthly', this)">Mensual</button>
+                </div>
+            </div>
+            <div style="height: 380px;">
+                <canvas id="pnlChart"></canvas>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- ROI by Confidence -->
+            <div class="col-lg-5">
+                <div class="card-dark p-4" style="height: 100%;">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-funnel me-2" style="color: var(--accent);"></i>ROI por Nivel de Confianza</h5>
+                    <table class="confidence-breakdown">
+                        <thead>
+                            <tr>
+                                <th>Nivel</th>
+                                <th class="text-center">Plays</th>
+                                <th class="text-center">Hit Rate</th>
+                                <th class="text-end">ROI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <span class="badge" style="background: rgba(22,163,74,0.12); color: #16A34A;">High</span>
+                                </td>
+                                <td class="text-center" style="color: var(--text-secondary);">--</td>
+                                <td class="text-center" style="color: var(--text-secondary);">--</td>
+                                <td class="text-end fw-bold" style="color: var(--text-secondary);">--</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="badge" style="background: rgba(245,158,11,0.12); color: #F59E0B;">Medium</span>
+                                </td>
+                                <td class="text-center" style="color: var(--text-secondary);">--</td>
+                                <td class="text-center" style="color: var(--text-secondary);">--</td>
+                                <td class="text-end fw-bold" style="color: var(--text-secondary);">--</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="badge" style="background: rgba(139,148,158,0.15); color: #8b949e;">Low</span>
+                                </td>
+                                <td class="text-center" style="color: var(--text-secondary);">--</td>
+                                <td class="text-center" style="color: var(--text-secondary);">--</td>
+                                <td class="text-end fw-bold" style="color: var(--text-secondary);">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
+                        <small style="color: var(--text-secondary);">
+                            <i class="bi bi-info-circle me-1"></i>Desglose disponible cuando haya suficientes datos resueltos.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drawdown Chart -->
+            <div class="col-lg-7">
+                <div class="card-dark p-4" style="height: 100%;">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-graph-down me-2" style="color: #DC2626;"></i>Drawdown</h5>
+                    <div style="height: 250px;">
+                        <canvas id="drawdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predictions Table -->
+        <div class="card-dark p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-table me-2" style="color: var(--accent);"></i>Historial de Predicciones</h5>
+                <small style="color: var(--text-secondary);">@Model.PnLSeries.Count registros</small>
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-bar">
+                <select id="filterResult" onchange="filterTable()">
+                    <option value="all">Todos los resultados</option>
+                    <option value="positive">Positivos</option>
+                    <option value="negative">Negativos</option>
+                </select>
+                <input type="date" id="filterDateFrom" placeholder="Desde" onchange="filterTable()"
+                       style="color-scheme: light;" />
+                <input type="date" id="filterDateTo" placeholder="Hasta" onchange="filterTable()"
+                       style="color-scheme: light;" />
+                <button class="chart-control-btn" onclick="clearFilters()">
+                    <i class="bi bi-x-circle me-1"></i>Limpiar
+                </button>
+            </div>
+
+            @if (Model.PnLSeries.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-dark-custom table-hover mb-0" id="predictionsTable">
+                        <thead>
+                            <tr style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th>Fecha</th>
+                                <th class="text-end">PnL Diario</th>
+                                <th class="text-end">PnL Acumulado</th>
+                                <th class="text-center">Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var point in Model.PnLSeries.OrderByDescending(p => p.Date))
+                            {
+                                <tr class="pnl-data-row @(point.DailyPnL >= 0 ? "pnl-row-positive" : "pnl-row-negative")"
+                                    data-date="@point.Date.ToString("yyyy-MM-dd")"
+                                    data-result="@(point.DailyPnL >= 0 ? "positive" : "negative")">
+                                    <td>@point.Date.ToString("dd MMM yyyy")</td>
+                                    <td class="text-end fw-bold" style="color: @(point.DailyPnL >= 0 ? "var(--accent)" : "#DC2626");">
+                                        @(point.DailyPnL >= 0 ? "+" : "")@point.DailyPnL.ToString("F2")u
+                                    </td>
+                                    <td class="text-end fw-bold" style="color: @(point.CumulativePnL >= 0 ? "var(--accent)" : "#DC2626");">
+                                        @(point.CumulativePnL >= 0 ? "+" : "")@point.CumulativePnL.ToString("F2")u
+                                    </td>
+                                    <td class="text-center">
+                                        @if (point.DailyPnL > 0)
+                                        {
+                                            <span class="badge" style="background: rgba(22,163,74,0.12); color: #16A34A;">
+                                                <i class="bi bi-check-circle me-1"></i>Ganancia
+                                            </span>
+                                        }
+                                        else if (point.DailyPnL < 0)
+                                        {
+                                            <span class="badge" style="background: rgba(220,38,38,0.12); color: #DC2626;">
+                                                <i class="bi bi-x-circle me-1"></i>Perdida
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge" style="background: rgba(139,148,158,0.15); color: #8b949e;">
+                                                <i class="bi bi-dash-circle me-1"></i>Break-even
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,107,43,0.08); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                        <i class="bi bi-clipboard-data display-4" style="color: var(--border-color);"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Sin datos de backtesting</h5>
+                    <p style="color: var(--text-secondary);">Los datos apareceran automaticamente cuando se resuelvan predicciones.</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PnLSeries.Select(p => p.Date.ToString("dd/MM"))));
+        const cumData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PnLSeries.Select(p => Math.Round(p.CumulativePnL, 2))));
+        const dailyData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PnLSeries.Select(p => Math.Round(p.DailyPnL, 2))));
+
+        // Calculate drawdown
+        let peak = 0;
+        const drawdownData = cumData.map(v => {
+            if (v > peak) peak = v;
+            return peak > 0 ? ((v - peak) / peak * 100) : 0;
+        });
+
+        // Main PnL Chart
+        const ctx = document.getElementById('pnlChart')?.getContext('2d');
+        let pnlChart;
+        if (ctx) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 380);
+            gradient.addColorStop(0, 'rgba(255, 107, 43, 0.25)');
+            gradient.addColorStop(0.5, 'rgba(255, 107, 43, 0.05)');
+            gradient.addColorStop(1, 'rgba(255, 107, 43, 0)');
+
+            pnlChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Sin datos'],
+                    datasets: [
+                        {
+                            label: 'PnL Acumulado (u)',
+                            data: cumData.length > 0 ? cumData : [0],
+                            type: 'line',
+                            borderColor: '#FF6B2B',
+                            backgroundColor: gradient,
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: cumData.length > 30 ? 0 : 3,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#FF6B2B',
+                            pointBorderColor: '#FFFFFF',
+                            pointBorderWidth: 2,
+                            yAxisID: 'y',
+                            order: 0
+                        },
+                        {
+                            label: 'Break-even',
+                            data: cumData.map(() => 0),
+                            type: 'line',
+                            borderColor: 'rgba(139,148,158,0.4)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false,
+                            yAxisID: 'y',
+                            order: 1
+                        },
+                        {
+                            label: 'PnL Diario (u)',
+                            data: dailyData.length > 0 ? dailyData : [0],
+                            backgroundColor: dailyData.map(v => v >= 0 ? 'rgba(255, 107, 43, 0.35)' : 'rgba(220, 38, 38, 0.35)'),
+                            borderColor: dailyData.map(v => v >= 0 ? '#FF6B2B' : '#DC2626'),
+                            borderWidth: 1,
+                            borderRadius: 3,
+                            yAxisID: 'y1',
+                            order: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#64748B', font: { size: 11 }, usePointStyle: true }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            borderColor: '#E2E8F0',
+                            borderWidth: 1,
+                            titleColor: '#1E293B',
+                            bodyColor: '#64748B',
+                            cornerRadius: 8,
+                            padding: 12
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#64748B', maxRotation: 45, font: { size: 10 } },
+                            grid: { color: '#E2E8F0', drawBorder: false }
+                        },
+                        y: {
+                            position: 'left',
+                            ticks: { color: '#64748B', font: { size: 10 } },
+                            grid: { color: '#E2E8F0', drawBorder: false },
+                            title: { display: true, text: 'Acumulado (u)', color: '#64748B', font: { size: 10 } }
+                        },
+                        y1: {
+                            position: 'right',
+                            ticks: { color: '#64748B', font: { size: 10 } },
+                            grid: { display: false },
+                            title: { display: true, text: 'Diario (u)', color: '#64748B', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Drawdown Chart
+        const ddCtx = document.getElementById('drawdownChart')?.getContext('2d');
+        if (ddCtx) {
+            const ddGradient = ddCtx.createLinearGradient(0, 0, 0, 250);
+            ddGradient.addColorStop(0, 'rgba(220, 38, 38, 0)');
+            ddGradient.addColorStop(1, 'rgba(220, 38, 38, 0.2)');
+
+            new Chart(ddCtx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Sin datos'],
+                    datasets: [{
+                        label: 'Drawdown %',
+                        data: drawdownData.length > 0 ? drawdownData : [0],
+                        borderColor: '#DC2626',
+                        backgroundColor: ddGradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            borderColor: '#E2E8F0',
+                            borderWidth: 1,
+                            titleColor: '#1E293B',
+                            bodyColor: '#64748B',
+                            callbacks: {
+                                label: function(ctx) { return 'Drawdown: ' + ctx.raw.toFixed(2) + '%'; }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#64748B', font: { size: 10 } },
+                            grid: { color: '#E2E8F0', drawBorder: false }
+                        },
+                        y: {
+                            ticks: { color: '#64748B', font: { size: 10 }, callback: v => v + '%' },
+                            grid: { color: '#E2E8F0', drawBorder: false },
+                            max: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        // Chart view toggle
+        function setChartView(view, btn) {
+            document.querySelectorAll('.chart-control-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // Placeholder: in production, this would regroup data by month
+        }
+
+        // Table filtering
+        function filterTable() {
+            const result = document.getElementById('filterResult').value;
+            const from = document.getElementById('filterDateFrom').value;
+            const to = document.getElementById('filterDateTo').value;
+
+            document.querySelectorAll('.pnl-data-row').forEach(row => {
+                let show = true;
+                const rowResult = row.dataset.result;
+                const rowDate = row.dataset.date;
+
+                if (result !== 'all' && rowResult !== result) show = false;
+                if (from && rowDate < from) show = false;
+                if (to && rowDate > to) show = false;
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function clearFilters() {
+            document.getElementById('filterResult').value = 'all';
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            filterTable();
+        }
+
+        // Export CSV placeholder
+        function exportCSV() {
+            let csv = 'Fecha,PnL Diario,PnL Acumulado\n';
+            document.querySelectorAll('.pnl-data-row').forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cells = row.querySelectorAll('td');
+                    csv += `${cells[0].textContent.trim()},${cells[1].textContent.trim()},${cells[2].textContent.trim()}\n`;
+                }
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'backtesting_ollin.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+}

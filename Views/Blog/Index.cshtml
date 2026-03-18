@@ -1,0 +1,416 @@
+@model BlogIndexViewModel
+@{
+    ViewData["Title"] = "Blog";
+    ViewData["ActiveNav"] = "Blog";
+    ViewData["MetaDescription"] = "Analisis de Liga MX, tendencias de mercado y educacion sobre value betting.";
+    ViewData["CanonicalUrl"] = "/blog" + (Model.CurrentCategorySlug != null ? $"?category={Model.CurrentCategorySlug}" : "") + (Model.CurrentPage > 1 ? $"{(Model.CurrentCategorySlug != null ? "&" : "?")}page={Model.CurrentPage}" : "");
+
+    var currentCategoryName = Model.CurrentCategorySlug != null
+        ? Model.Categories.FirstOrDefault(c => c.Slug == Model.CurrentCategorySlug)?.Name
+        : null;
+
+    int EstimateReadTime(string? bodyHtml)
+    {
+        if (string.IsNullOrEmpty(bodyHtml)) return 1;
+        var text = System.Text.RegularExpressions.Regex.Replace(bodyHtml, "<[^>]+>", " ");
+        var wordCount = text.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+        var minutes = (int)Math.Ceiling(wordCount / 200.0);
+        return minutes < 1 ? 1 : minutes;
+    }
+
+    var recentPosts = Model.Posts.OrderByDescending(p => p.PublishedAt).Take(3).ToList();
+    var allTags = Model.Posts
+        .SelectMany(p => p.Tags)
+        .GroupBy(t => t.BlogTag.Slug)
+        .Select(g => new { Tag = g.First().BlogTag, Count = g.Count() })
+        .OrderByDescending(t => t.Count)
+        .Take(15)
+        .ToList();
+}
+
+@section Styles {
+<style>
+    .blog-search-bar {
+        position: relative;
+    }
+    .blog-search-bar input {
+        padding-left: 2.5rem;
+        border-radius: 10px;
+        height: 48px;
+    }
+    .blog-search-bar .search-icon {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        pointer-events: none;
+    }
+    .blog-card {
+        overflow: hidden;
+        position: relative;
+    }
+    .blog-card .card-img-wrapper {
+        position: relative;
+        overflow: hidden;
+        height: 200px;
+    }
+    .blog-card .card-img-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s var(--ease-smooth);
+    }
+    .blog-card:hover .card-img-wrapper img {
+        transform: scale(1.06);
+    }
+    .blog-card .card-img-overlay-hover {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 40%, rgba(255, 107, 43, 0.15) 100%);
+        opacity: 0;
+        transition: opacity 0.4s var(--ease-smooth);
+    }
+    .blog-card:hover .card-img-overlay-hover {
+        opacity: 1;
+    }
+    .blog-card .card-img-placeholder {
+        height: 200px;
+        background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--border-color);
+        font-size: 2.5rem;
+    }
+    .read-time-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+    .sidebar-section {
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+    .sidebar-section:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+    .recent-post-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        text-decoration: none;
+        transition: all 0.2s var(--ease-smooth);
+    }
+    .recent-post-item:hover .recent-post-title {
+        color: var(--accent) !important;
+    }
+    .recent-post-num {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: rgba(255, 107, 43, 0.1);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .tag-cloud a {
+        display: inline-block;
+        padding: 0.3rem 0.7rem;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.78rem;
+        margin: 0.2rem;
+        transition: all 0.2s var(--ease-smooth);
+    }
+    .tag-cloud a:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(255, 107, 43, 0.08);
+    }
+    .tag-cloud a.tag-lg {
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 0.35rem 0.85rem;
+    }
+    .tag-cloud a.tag-md {
+        font-size: 0.82rem;
+        font-weight: 500;
+    }
+    .empty-state-icon {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1.5rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255, 107, 43, 0.08), rgba(255, 107, 43, 0.02));
+        border: 2px dashed var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+}
+
+<section class="py-5">
+    <div class="container">
+        <!-- Breadcrumbs -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0" style="--bs-breadcrumb-divider-color: var(--text-secondary); font-size: 0.85rem;">
+                <li class="breadcrumb-item">
+                    <a asp-controller="Home" asp-action="Index" style="color: var(--text-secondary); text-decoration: none;">
+                        <i class="bi bi-house-door me-1"></i>Inicio
+                    </a>
+                </li>
+                <li class="breadcrumb-item @(currentCategoryName == null ? "active" : "")">
+                    @if (currentCategoryName != null)
+                    {
+                        <a asp-action="Index" style="color: var(--text-secondary); text-decoration: none;">Blog</a>
+                    }
+                    else
+                    {
+                        <span style="color: var(--accent);">Blog</span>
+                    }
+                </li>
+                @if (currentCategoryName != null)
+                {
+                    <li class="breadcrumb-item active" style="color: var(--accent);">@currentCategoryName</li>
+                }
+            </ol>
+        </nav>
+
+        <!-- Header + Search -->
+        <div class="row mb-4 align-items-end">
+            <div class="col-lg-6">
+                <h1 class="fw-bold mb-1">
+                    @if (currentCategoryName != null)
+                    {
+                        @:Blog: @currentCategoryName
+                    }
+                    else if (Model.CurrentTagSlug != null)
+                    {
+                        @:Blog: #@Model.CurrentTagSlug
+                    }
+                    else
+                    {
+                        @:Blog
+                    }
+                </h1>
+                <p class="mb-0" style="color: var(--text-secondary);">Analisis, tendencias y educacion sobre Liga MX.</p>
+            </div>
+            <div class="col-lg-4 offset-lg-2 mt-3 mt-lg-0">
+                <form asp-action="Index" method="get" class="blog-search-bar">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" name="q" class="form-control"
+                           placeholder="Buscar articulos..." autocomplete="off"
+                           value="@Context.Request.Query["q"]" />
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Posts grid -->
+            <div class="col-lg-8">
+                @if (Model.Posts.Any())
+                {
+                    <div class="row g-4">
+                        @foreach (var post in Model.Posts)
+                        {
+                            var readTime = EstimateReadTime(post.BodyHtml);
+                            <div class="col-md-6 col-xl-4">
+                                <div class="card-dark blog-card h-100 d-flex flex-column">
+                                    @if (!string.IsNullOrEmpty(post.OgImageUrl))
+                                    {
+                                        <div class="card-img-wrapper" style="border-radius: 12px 12px 0 0;">
+                                            <img src="@post.OgImageUrl" alt="@post.Title" loading="lazy" />
+                                            <div class="card-img-overlay-hover"></div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="card-img-placeholder" style="border-radius: 12px 12px 0 0;">
+                                            <i class="bi bi-journal-richtext"></i>
+                                        </div>
+                                    }
+                                    <div class="p-4 d-flex flex-column flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge badge-accent">@post.Category?.Name</span>
+                                            <span class="read-time-badge">
+                                                <i class="bi bi-clock"></i> @readTime min
+                                            </span>
+                                        </div>
+                                        <h5 class="fw-bold mb-2" style="font-size: 1rem; line-height: 1.4;">
+                                            <a asp-controller="Blog" asp-action="Post" asp-route-slug="@post.Slug"
+                                               class="text-decoration-none stretched-link" style="color: var(--text-heading);">
+                                                @post.Title
+                                            </a>
+                                        </h5>
+                                        <p class="small flex-grow-1 mb-3" style="color: var(--text-secondary); line-height: 1.6;">
+                                            @(post.Excerpt ?? post.Title)
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                                            <small style="color: var(--text-secondary);">
+                                                @post.PublishedAt?.ToString("dd MMM yyyy")
+                                            </small>
+                                            <span class="small fw-semibold" style="color: var(--accent);">
+                                                Leer mas <i class="bi bi-arrow-right"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (Model.TotalPages > 1)
+                    {
+                        <nav class="mt-5" aria-label="Paginacion del blog">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
+                                    <a class="page-link" style="background: var(--bg-card); border-color: var(--border-color); color: var(--text-primary);"
+                                       asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)"
+                                       asp-route-category="@Model.CurrentCategorySlug"
+                                       aria-label="Pagina anterior">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                                @for (int i = 1; i <= Model.TotalPages; i++)
+                                {
+                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                        <a class="page-link @(i == Model.CurrentPage ? "border-0" : "")"
+                                           style="@(i == Model.CurrentPage ? "background-color: var(--accent); color: #FFFFFF;" : "background: var(--bg-card); border-color: var(--border-color); color: var(--text-primary);")"
+                                           asp-action="Index" asp-route-page="@i"
+                                           asp-route-category="@Model.CurrentCategorySlug">
+                                            @i
+                                        </a>
+                                    </li>
+                                }
+                                <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" style="background: var(--bg-card); border-color: var(--border-color); color: var(--text-primary);"
+                                       asp-action="Index" asp-route-page="@(Model.CurrentPage + 1)"
+                                       asp-route-category="@Model.CurrentCategorySlug"
+                                       aria-label="Pagina siguiente">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    }
+                }
+                else
+                {
+                    <div class="card-dark p-5 text-center">
+                        <div class="empty-state-icon">
+                            <i class="bi bi-journal-text display-3" style="color: var(--accent); opacity: 0.5;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-2">Proximamente contenido exclusivo</h4>
+                        <p class="mb-4 mx-auto" style="color: var(--text-secondary); max-width: 400px;">
+                            Estamos preparando analisis detallados de Liga MX. Suscribete para ser el primero en enterarte cuando publiquemos.
+                        </p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="/blog/rss" class="btn btn-outline-accent">
+                                <i class="bi bi-rss me-2"></i>Suscribirse al RSS
+                            </a>
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-accent">
+                                <i class="bi bi-house me-2"></i>Volver al inicio
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <div class="card-dark p-4" style="position: sticky; top: 5rem;">
+                    <!-- Categories -->
+                    <div class="sidebar-section">
+                        <h6 class="fw-bold mb-3 text-uppercase" style="letter-spacing: 0.5px; color: var(--text-secondary); font-size: 0.8rem;">
+                            <i class="bi bi-folder me-2"></i>Categorias
+                        </h6>
+                        @if (Model.Categories.Any())
+                        {
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <a asp-action="Index"
+                                       class="text-decoration-none d-flex justify-content-between align-items-center @(Model.CurrentCategorySlug == null ? "fw-bold" : "")"
+                                       style="color: @(Model.CurrentCategorySlug == null ? "var(--accent)" : "var(--text-secondary)");">
+                                        <span>Todas</span>
+                                    </a>
+                                </li>
+                                @foreach (var cat in Model.Categories)
+                                {
+                                    <li class="mb-2">
+                                        <a asp-action="Index" asp-route-category="@cat.Slug"
+                                           class="text-decoration-none d-flex justify-content-between align-items-center @(Model.CurrentCategorySlug == cat.Slug ? "fw-bold" : "")"
+                                           style="color: @(Model.CurrentCategorySlug == cat.Slug ? "var(--accent)" : "var(--text-secondary)");">
+                                            <span>@cat.Name</span>
+                                            <span class="badge bg-secondary rounded-pill">@cat.Posts.Count</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="small mb-0" style="color: var(--text-secondary);">Sin categorias aun.</p>
+                        }
+                    </div>
+
+                    <!-- Recent Posts -->
+                    @if (recentPosts.Any())
+                    {
+                        <div class="sidebar-section">
+                            <h6 class="fw-bold mb-3 text-uppercase" style="letter-spacing: 0.5px; color: var(--text-secondary); font-size: 0.8rem;">
+                                <i class="bi bi-clock-history me-2"></i>Posts Recientes
+                            </h6>
+                            @{ var idx = 1; }
+                            @foreach (var rp in recentPosts)
+                            {
+                                <a asp-controller="Blog" asp-action="Post" asp-route-slug="@rp.Slug" class="recent-post-item">
+                                    <span class="recent-post-num">@idx</span>
+                                    <div>
+                                        <div class="recent-post-title small fw-semibold" style="color: var(--text-primary); line-height: 1.4;">@rp.Title</div>
+                                        <small style="color: var(--text-secondary);">@rp.PublishedAt?.ToString("dd MMM yyyy")</small>
+                                    </div>
+                                </a>
+                                idx++;
+                            }
+                        </div>
+                    }
+
+                    <!-- Tags Cloud -->
+                    @if (allTags.Any())
+                    {
+                        <div class="sidebar-section">
+                            <h6 class="fw-bold mb-3 text-uppercase" style="letter-spacing: 0.5px; color: var(--text-secondary); font-size: 0.8rem;">
+                                <i class="bi bi-tags me-2"></i>Tags Populares
+                            </h6>
+                            <div class="tag-cloud">
+                                @{ var maxCount = allTags.Max(t => t.Count); }
+                                @foreach (var tagItem in allTags)
+                                {
+                                    var sizeClass = tagItem.Count >= maxCount * 0.7 ? "tag-lg" : (tagItem.Count >= maxCount * 0.4 ? "tag-md" : "");
+                                    <a asp-action="Index" asp-route-tag="@tagItem.Tag.Slug" class="@sizeClass">
+                                        @tagItem.Tag.Name
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

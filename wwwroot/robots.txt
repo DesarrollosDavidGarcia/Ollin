@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /blog/
+Disallow: /dashboard/
+Disallow: /account/
+Disallow: /subscription/
+Disallow: /Account/
+Disallow: /Dashboard/
+Disallow: /Subscription/
+
+Sitemap: https://ollin.mx/sitemap.xml

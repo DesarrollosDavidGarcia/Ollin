@@ -1,0 +1,631 @@
+@{
+    var siteUrl = ViewContext.HttpContext.RequestServices.GetService<IConfiguration>()?["Ollin:SiteUrl"] ?? "https://ollin.mx";
+    var pageTitle = ViewData["Title"]?.ToString() ?? "Inteligencia Liga MX";
+    var fullTitle = $"{pageTitle} | Ollin";
+    var metaDesc = ViewData["MetaDescription"]?.ToString() ?? "Apuestas inteligentes para Liga MX. Analisis de 19 fuentes, 1000 simulaciones por partido, ventaja matematica verificable.";
+    var canonicalPath = ViewData["CanonicalUrl"]?.ToString();
+    var canonicalFull = !string.IsNullOrEmpty(canonicalPath) ? $"{siteUrl}{(canonicalPath.StartsWith("/") ? "" : "/")}{canonicalPath}" : null;
+    var ogImage = ViewData["OgImage"]?.ToString();
+    if (string.IsNullOrEmpty(ogImage)) ogImage = $"{siteUrl}/og-default.png";
+}
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@fullTitle</title>
+    <meta name="description" content="@metaDesc" />
+    <meta name="robots" content="@(ViewData["Robots"] ?? "index, follow")" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="author" content="Ollin" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+    @if (canonicalFull != null)
+    {
+        <link rel="canonical" href="@canonicalFull" />
+    }
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="@(ViewData["OgTitle"] ?? pageTitle)" />
+    <meta property="og:description" content="@metaDesc" />
+    <meta property="og:type" content="@(ViewData["OgType"] ?? "website")" />
+    @if (canonicalFull != null)
+    {
+        <meta property="og:url" content="@canonicalFull" />
+    }
+    <meta property="og:image" content="@ogImage" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:site_name" content="Ollin - Inteligencia Liga MX" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@(ViewData["OgTitle"] ?? pageTitle)" />
+    <meta name="twitter:description" content="@metaDesc" />
+    <meta name="twitter:image" content="@ogImage" />
+
+    <!-- RSS -->
+    <link rel="alternate" type="application/rss+xml" title="Ollin Blog" href="/blog/rss" />
+
+    <!-- Preconnect (eliminates DNS+TLS latency for critical resources) -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Bootstrap CSS (critical — must block render) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+
+    <!-- Google Fonts: inlined to eliminate request chain -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+        /* latin-ext (acentos: a, e, n, etc.) */
+        @@font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400 800;
+            font-display: swap;
+            src: url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2) format('woff2');
+            unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        }
+        /* latin */
+        @@font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400 800;
+            font-display: swap;
+            src: url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+    </style>
+
+    <!-- Bootstrap Icons: load async (non-blocking) with font-display fix -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" as="style" crossorigin onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" /></noscript>
+
+    <style>
+        /* ===== Custom Properties ===== */
+        :root {
+            --accent: #C2410C;            /* WCAG AA on white — 4.8:1 */
+            --accent-bright: #FF6B2B;     /* For large text/decorative only */
+            --accent-hover: #9A3412;       /* Darker for hover — 6.5:1 */
+            --accent-glow: rgba(194, 65, 12, 0.2);
+            --accent-red: #B91C1C;         /* Darker red — 5.7:1 on white */
+            --accent-red-light: #FEE2E2;
+            --accent-orange-light: #FFF7ED;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #475569;     /* Darker gray — 5.9:1 on white */
+            --text-heading: #0F172A;
+            --text-on-accent: #FFFFFF;     /* White text on accent bg */
+            --footer-text: #334155;        /* 7.1:1 on #F1F5F9 */
+
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --space-3xl: 4rem;
+
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-blur: blur(12px);
+        }
+
+        /* ===== Selection & Scrollbar ===== */
+        ::selection {
+            background-color: var(--accent);
+            color: #FFFFFF;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E1 #F1F5F9;
+        }
+
+        /* ===== Focus Accessibility ===== */
+        *:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+
+        /* ===== Base ===== */
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        main { flex: 1; }
+        a {
+            color: var(--accent);
+            transition: color 0.3s var(--ease-smooth);
+        }
+        a:hover { color: var(--accent-hover); }
+
+        /* ===== Utility Classes ===== */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
+        }
+
+        .glow-accent {
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, var(--accent), var(--accent-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s var(--ease-smooth) both;
+        }
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Announcement Bar ===== */
+        .announcement-bar {
+            background: linear-gradient(90deg, var(--accent), var(--accent-red));
+            color: #FFFFFF;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.4rem 0;
+            text-align: center;
+            position: relative;
+        }
+        .announcement-bar a {
+            color: #FFFFFF;
+            text-decoration: underline;
+        }
+        .announcement-bar .btn-close-announce {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #FFFFFF;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+            opacity: 0.7;
+            transition: opacity 0.3s var(--ease-smooth);
+        }
+        .announcement-bar .btn-close-announce:hover {
+            opacity: 1;
+        }
+
+        /* ===== Navbar ===== */
+        .navbar-ollin {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.3s var(--ease-smooth);
+        }
+        .navbar-ollin .navbar-brand {
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: var(--accent) !important;
+            letter-spacing: 1px;
+            transition: all 0.3s var(--ease-smooth);
+        }
+        .navbar-ollin .navbar-brand:hover {
+            text-shadow: 0 0 12px var(--accent-glow);
+        }
+        .navbar-ollin .nav-link {
+            color: var(--text-primary) !important;
+            font-weight: 500;
+            transition: color 0.3s var(--ease-smooth);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        .navbar-ollin .nav-link:hover,
+        .navbar-ollin .nav-link.active {
+            color: var(--accent-hover) !important;
+        }
+        .navbar-ollin .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 1px;
+        }
+
+        /* Hamburger icon override for light navbar */
+        .navbar-ollin .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(30, 41, 59, 0.75)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Hamburger animation */
+        .navbar-toggler {
+            transition: transform 0.3s var(--ease-smooth);
+            border-color: var(--border-color) !important;
+        }
+        .navbar-toggler[aria-expanded="true"] {
+            transform: rotate(90deg);
+        }
+        .navbar-collapse {
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        /* ===== Buttons ===== */
+        .btn-accent {
+            background-color: var(--accent);
+            color: #FFFFFF;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s var(--ease-smooth);
+        }
+        .btn-accent:hover {
+            background-color: var(--accent-hover);
+            color: #FFFFFF;
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+        .btn-outline-accent {
+            border: 2px solid var(--accent);
+            color: var(--accent-hover);
+            font-weight: 600;
+            transition: all 0.3s var(--ease-smooth);
+        }
+        .btn-outline-accent:hover {
+            background-color: var(--accent);
+            color: var(--text-on-accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+
+        /* ===== Cards ===== */
+        .card-dark {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.3s var(--ease-smooth);
+        }
+        .card-dark:hover {
+            border-color: var(--border-color);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        .card-dark .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-heading);
+        }
+
+        .badge-accent {
+            background-color: var(--accent);
+            color: var(--text-on-accent);
+        }
+
+        /* ===== Stat Cards ===== */
+        .stat-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, var(--bg-secondary) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s var(--ease-smooth);
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--border-color);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== Table ===== */
+        .table-dark-custom {
+            --bs-table-bg: #FFFFFF;
+            --bs-table-border-color: var(--border-color);
+            --bs-table-color: var(--text-primary);
+            --bs-table-striped-bg: var(--bg-secondary);
+            --bs-table-hover-bg: var(--accent-orange-light);
+        }
+
+        /* ===== Forms ===== */
+        .form-control, .form-select {
+            background-color: #FFFFFF;
+            border-color: var(--border-color);
+            color: var(--text-primary);
+            transition: all 0.3s var(--ease-smooth);
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #FFFFFF;
+            border-color: var(--accent);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem var(--accent-glow);
+        }
+        .form-check-input:checked {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ===== Footer ===== */
+        .footer-ollin {
+            background-color: #F1F5F9;
+            border-top: 1px solid var(--border-color);
+            color: var(--footer-text);
+        }
+        .footer-ollin a {
+            color: var(--footer-text);
+            text-decoration: none;
+            transition: color 0.3s var(--ease-smooth);
+        }
+        .footer-ollin a:hover {
+            color: var(--accent);
+        }
+        .footer-ollin .footer-heading {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+            color: var(--text-heading);
+        }
+        .footer-social-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            transition: all 0.3s var(--ease-smooth);
+            font-size: 1rem;
+        }
+        .footer-social-icon:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-orange-light);
+        }
+        .footer-bottom {
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        /* ===== Scroll to Top ===== */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--accent);
+            color: #FFFFFF;
+            border: none;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s var(--ease-smooth);
+            z-index: 1050;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .scroll-to-top:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+    </style>
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Announcement Bar -->
+    <div class="announcement-bar" id="announcementBar">
+        <div class="container">
+            Nuevo: Analisis Clausura 2026 disponible
+            <button class="btn-close-announce" onclick="document.getElementById('announcementBar').style.display='none'" aria-label="Cerrar anuncio">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light navbar-ollin sticky-top">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-graph-up-arrow me-1"></i>Ollin
+                </a>
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navMain">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Blog" ? "active" : "")" asp-controller="Blog" asp-action="Index">Blog</a>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Profile" ? "active" : "")" asp-controller="Account" asp-action="Profile">
+                                    <i class="bi bi-person-circle me-1"></i>Perfil
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="nav-link btn btn-link border-0">
+                                        <i class="bi bi-box-arrow-right me-1"></i>Salir
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Login" ? "active" : "")" asp-controller="Account" asp-action="Login">Iniciar Sesion</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-accent btn-sm ms-2 mt-1" asp-controller="Account" asp-action="Register">Registrarse</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <footer class="footer-ollin py-5 mt-auto">
+        <div class="container">
+            <div class="row g-4">
+                <!-- Brand -->
+                <div class="col-lg-3 col-md-6">
+                    <p class="fw-bold footer-heading" style="color: var(--text-heading); font-size: 1.1rem;">
+                        <i class="bi bi-graph-up-arrow me-1"></i>Ollin
+                    </p>
+                    <p class="small mb-3">Inteligencia deportiva avanzada para Liga MX. Datos, estadisticas y analisis cuantitativo.</p>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="footer-social-icon" aria-label="X (Twitter)"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" class="footer-social-icon" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="footer-social-icon" aria-label="Telegram"><i class="bi bi-telegram"></i></a>
+                    </div>
+                </div>
+
+                <!-- Navegacion -->
+                <div class="col-lg-3 col-md-6">
+                    <p class="fw-bold footer-heading">Navegacion</p>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-1"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                        <li class="mb-1"><a asp-controller="Blog" asp-action="Index">Blog</a></li>
+                        <li class="mb-1"><a href="/blog/rss"><i class="bi bi-rss me-1"></i>RSS Feed</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div class="col-lg-3 col-md-6">
+                    <p class="fw-bold footer-heading">Legal</p>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-1"><a asp-controller="Home" asp-action="Terms">Terminos de Servicio</a></li>
+                        <li class="mb-1"><a asp-controller="Home" asp-action="Privacy">Privacidad</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contacto -->
+                <div class="col-lg-3 col-md-6">
+                    <p class="fw-bold footer-heading">Contacto</p>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-1"><i class="bi bi-envelope me-1"></i>contacto@@ollin.mx</li>
+                        <li class="mb-1"><i class="bi bi-geo-alt me-1"></i>Mexico</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom text-center">
+                <p class="small mb-0">&copy; @DateTime.UtcNow.Year Ollin. Todos los derechos reservados. Hecho en Mexico.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top -->
+    <button class="scroll-to-top" id="scrollToTop" aria-label="Volver arriba">
+        <i class="bi bi-chevron-up"></i>
+    </button>
+
+    @RenderSection("StructuredData", required: false)
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            crossorigin="anonymous" defer></script>
+
+    <script>
+        // Scroll to top button
+        (function() {
+            var btn = document.getElementById('scrollToTop');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 300) {
+                    btn.classList.add('visible');
+                } else {
+                    btn.classList.remove('visible');
+                }
+            });
+            btn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
+
+        // Announcement bar dismiss persistence
+        (function() {
+            var bar = document.getElementById('announcementBar');
+            if (sessionStorage.getItem('announceDismissed') === '1') {
+                bar.style.display = 'none';
+            }
+            bar.querySelector('.btn-close-announce').addEventListener('click', function() {
+                sessionStorage.setItem('announceDismissed', '1');
+            });
+        })();
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

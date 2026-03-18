@@ -1,0 +1,861 @@
+@{
+    ViewData["Title"] = "Apuestas Inteligentes Liga MX | Value Bets con Ventaja Matematica";
+    ViewData["MetaDescription"] = "Deja de apostar a ciegas. Nuestro motor analiza 19 fuentes, cruza odds de 5 casas y te dice donde el mercado se equivoca. 1,000 simulaciones por partido. Backtesting verificable.";
+    ViewData["CanonicalUrl"] = "/";
+    ViewData["ActiveNav"] = "Home";
+}
+
+@section Styles {
+<style>
+    /* ===== Hero ===== */
+    .hero-section {
+        min-height: calc(100vh - 56px);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding: 4rem 0;
+        background: #FFFFFF;
+    }
+    .hero-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background:
+            radial-gradient(ellipse 80% 60% at 20% 40%, rgba(255,107,43,0.06) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 50% at 80% 30%, rgba(220,38,38,0.04) 0%, transparent 50%),
+            radial-gradient(ellipse 50% 40% at 50% 80%, rgba(255,107,43,0.03) 0%, transparent 50%);
+        animation: heroBgShift 12s ease-in-out infinite alternate;
+    }
+    @@keyframes heroBgShift {
+        0% { transform: scale(1) translate(0,0); opacity: 0.7; }
+        50% { transform: scale(1.08) translate(-2%,1%); opacity: 1; }
+        100% { transform: scale(1) translate(1%,-1%); opacity: 0.8; }
+    }
+    /* Floating particles */
+    .hero-particles {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+    }
+    .hero-particle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0;
+        animation: particleFloat linear infinite;
+    }
+    .hero-particle:nth-child(1) { width:6px;height:6px;background:var(--accent);left:10%;top:80%;animation-duration:9s;animation-delay:0s; }
+    .hero-particle:nth-child(2) { width:4px;height:4px;background:var(--accent-red);left:25%;top:90%;animation-duration:11s;animation-delay:1s; }
+    .hero-particle:nth-child(3) { width:5px;height:5px;background:var(--accent);left:50%;top:85%;animation-duration:10s;animation-delay:2s; }
+    .hero-particle:nth-child(4) { width:3px;height:3px;background:var(--accent-red);left:70%;top:95%;animation-duration:8s;animation-delay:0.5s; }
+    .hero-particle:nth-child(5) { width:7px;height:7px;background:var(--accent);left:85%;top:88%;animation-duration:12s;animation-delay:3s; }
+    .hero-particle:nth-child(6) { width:4px;height:4px;background:var(--accent-red);left:40%;top:92%;animation-duration:10s;animation-delay:4s; }
+    @@keyframes particleFloat {
+        0% { transform: translateY(0); opacity: 0; }
+        10% { opacity: 0.5; }
+        90% { opacity: 0.5; }
+        100% { transform: translateY(-100vh); opacity: 0; }
+    }
+
+    .hero-content { position: relative; z-index: 1; }
+
+    .text-gradient {
+        background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent-red) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .hero-stats {
+        display: flex;
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+    .hero-stat-item {
+        text-align: center;
+    }
+    .hero-stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--accent);
+        display: block;
+    }
+    .hero-stat-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Hero mockup card */
+    .hero-mockup {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+        animation: mockupFloat 6s ease-in-out infinite;
+    }
+    @@keyframes mockupFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    .mockup-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .mockup-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+    }
+    .mockup-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.8rem;
+    }
+    .mockup-row:last-child { border-bottom: none; }
+    .mockup-label { color: var(--text-secondary); }
+    .mockup-value { font-weight: 700; }
+    .mockup-positive { color: var(--accent-hover); }
+    .mockup-negative { color: var(--accent-red); }
+    .mockup-bar {
+        height: 4px;
+        border-radius: 2px;
+        background: var(--border-color);
+        flex: 1;
+        margin: 0 0.75rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .mockup-bar-fill {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-red));
+    }
+
+    /* ===== Trust Bar ===== */
+    .trust-bar {
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.25rem 0;
+    }
+    .trust-badge {
+        display: inline-block;
+        padding: 0.35rem 0.9rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    /* ===== Features ===== */
+    .features-section {
+        background-color: var(--bg-primary);
+        padding: 5rem 0;
+    }
+    .feature-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+        height: 100%;
+    }
+    .feature-card:hover {
+        transform: translateY(-6px);
+        border-color: var(--accent);
+        box-shadow: 0 8px 30px rgba(255,107,43,0.1);
+    }
+    .feature-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 1.75rem;
+    }
+    .feature-icon-accent {
+        background: rgba(255,107,43,0.1);
+        color: var(--accent);
+    }
+    .feature-icon-blue {
+        background: rgba(220,38,38,0.1);
+        color: var(--accent-red);
+    }
+
+    /* ===== How It Works ===== */
+    .how-section {
+        background-color: var(--bg-secondary);
+        padding: 5rem 0;
+    }
+    .timeline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 0;
+        position: relative;
+    }
+    .timeline-step {
+        flex: 1;
+        max-width: 300px;
+        text-align: center;
+        position: relative;
+        padding: 0 1.5rem;
+    }
+    .timeline-number {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent-orange-light);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.4rem;
+        margin: 0 auto 1rem;
+        position: relative;
+        z-index: 2;
+    }
+    .timeline-connector {
+        position: absolute;
+        top: 28px;
+        left: calc(50% + 28px);
+        width: calc(100% - 56px);
+        height: 2px;
+        background: repeating-linear-gradient(
+            90deg,
+            var(--accent) 0px,
+            var(--accent) 8px,
+            transparent 8px,
+            transparent 16px
+        );
+        opacity: 0.4;
+        z-index: 1;
+    }
+    .timeline-step:last-child .timeline-connector { display: none; }
+
+    @@media (max-width: 767.98px) {
+        .timeline {
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        .timeline-step { max-width: 100%; padding: 0; }
+        .timeline-connector {
+            display: none;
+        }
+    }
+
+    /* ===== Pricing ===== */
+    .pricing-section {
+        background-color: var(--bg-primary);
+        padding: 5rem 0;
+    }
+    .pricing-card-free {
+        background: var(--bg-card);
+        border: 2px solid var(--border-color);
+        border-radius: 20px;
+        padding: 2.5rem 2rem;
+        height: 100%;
+        transition: border-color 0.3s;
+    }
+    .pricing-card-free:hover {
+        border-color: var(--text-secondary);
+    }
+    .pricing-card-premium {
+        background: var(--bg-card);
+        border: 2px solid var(--accent);
+        border-radius: 20px;
+        padding: 2.5rem 2rem;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        box-shadow: 0 0 40px rgba(255,107,43,0.08), 0 4px 20px rgba(255,107,43,0.06);
+    }
+    .pricing-card-premium::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-red));
+    }
+    .pricing-popular-badge {
+        position: absolute;
+        top: 1rem;
+        right: -2rem;
+        background: linear-gradient(90deg, var(--accent), var(--accent-red));
+        color: #FFFFFF;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.3rem 2.5rem;
+        transform: rotate(45deg);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .pricing-amount {
+        font-size: 3rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .pricing-amount-accent { color: var(--accent); }
+    .pricing-amount-muted { color: var(--text-primary); }
+    .pricing-currency {
+        font-size: 1rem;
+        color: var(--text-secondary);
+    }
+    .pricing-features li {
+        padding: 0.4rem 0;
+        font-size: 0.9rem;
+    }
+    .pricing-features i {
+        width: 20px;
+    }
+
+    /* ===== FAQ ===== */
+    .faq-section {
+        background-color: var(--bg-secondary);
+        padding: 5rem 0;
+    }
+    .faq-accordion .accordion-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        margin-bottom: 0.75rem;
+        border-radius: 12px !important;
+        overflow: hidden;
+    }
+    .faq-accordion .accordion-button {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-weight: 600;
+        box-shadow: none;
+        padding: 1.25rem 1.5rem;
+    }
+    .faq-accordion .accordion-button:not(.collapsed) {
+        background: var(--bg-card);
+        color: var(--accent);
+        border-bottom: 1px solid var(--accent);
+    }
+    .faq-accordion .accordion-button::after {
+        filter: brightness(0) saturate(100%) invert(45%) sepia(0%) hue-rotate(0deg);
+    }
+    .faq-accordion .accordion-button:not(.collapsed)::after {
+        filter: brightness(0) saturate(100%) invert(47%) sepia(89%) saturate(1500%) hue-rotate(3deg) brightness(101%) contrast(101%);
+    }
+    .faq-accordion .accordion-body {
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        padding: 1.25rem 1.5rem;
+        line-height: 1.7;
+    }
+
+    /* ===== Final CTA ===== */
+    .final-cta {
+        padding: 5rem 0;
+        background: var(--bg-primary);
+    }
+    .cta-card {
+        background: var(--bg-card);
+        border: 2px solid transparent;
+        border-image: linear-gradient(135deg, var(--accent), var(--accent-red)) 1;
+        border-radius: 0;
+        padding: 3.5rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    /* Workaround: border-image breaks border-radius, use wrapper */
+    .cta-card-wrapper {
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        padding: 2px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-red));
+    }
+    .cta-card-inner {
+        background: var(--bg-card);
+        border-radius: 18px;
+        padding: 3.5rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .cta-glow {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255,107,43,0.06) 0%, transparent 70%);
+        top: -100px;
+        right: -50px;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    /* ===== Section heading utility ===== */
+    .section-subtitle {
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+</style>
+}
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-bg"></div>
+    <div class="hero-particles">
+        <div class="hero-particle"></div>
+        <div class="hero-particle"></div>
+        <div class="hero-particle"></div>
+        <div class="hero-particle"></div>
+        <div class="hero-particle"></div>
+        <div class="hero-particle"></div>
+    </div>
+    <div class="container hero-content">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <span class="badge badge-accent mb-3 px-3 py-2" style="font-size: 0.85rem;">
+                    <i class="bi bi-lightning-charge-fill me-1"></i>La ventaja que las casas no quieren que tengas
+                </span>
+                <h1 class="display-3 fw-bold mb-3" style="line-height: 1.1; color: var(--text-heading);">
+                    Deja de apostar a ciegas en
+                    <span class="text-gradient">Liga MX</span>
+                </h1>
+                <p class="lead mb-0" style="color: var(--text-secondary); font-size: 1.2rem; max-width: 520px;">
+                    Nuestro motor analiza <strong style="color:var(--text-primary);">19 fuentes de datos en tiempo real</strong>,
+                    cruza odds de 5 casas de apuestas y te dice <strong style="color:var(--text-primary);">exactamente donde el mercado esta equivocado</strong>
+                    — con la matematica para probarlo.
+                </p>
+                <div class="hero-stats">
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">19</span>
+                        <span class="hero-stat-label">Fuentes en Vivo</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">1,000</span>
+                        <span class="hero-stat-label">Simulaciones/Partido</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">95%</span>
+                        <span class="hero-stat-label">Confianza Estadistica</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="#pricing" class="btn btn-accent btn-lg px-4 py-2">
+                        <i class="bi bi-rocket-takeoff me-2"></i>Comenzar Premium
+                    </a>
+                    <a asp-controller="Blog" asp-action="Index" class="btn btn-outline-accent btn-lg px-4 py-2">
+                        <i class="bi bi-journal-text me-2"></i>Leer Blog
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="hero-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-dot" style="background:var(--accent-red);"></div>
+                        <div class="mockup-dot" style="background:var(--accent);"></div>
+                        <div class="mockup-dot" style="background:#22c55e;"></div>
+                        <span style="color:var(--text-secondary);font-size:0.75rem;margin-left:0.5rem;">Dashboard &mdash; Jornada 15</span>
+                    </div>
+                    <div class="mockup-row">
+                        <span class="mockup-label">America vs Guadalajara</span>
+                        <span class="mockup-value mockup-positive">Edge +8.3%</span>
+                    </div>
+                    <div class="mockup-row">
+                        <span class="mockup-label">xG Diferencial</span>
+                        <div class="mockup-bar"><div class="mockup-bar-fill" style="width:72%;"></div></div>
+                        <span class="mockup-value" style="color:var(--text-primary);font-size:0.8rem;">+0.47</span>
+                    </div>
+                    <div class="mockup-row">
+                        <span class="mockup-label">IC 95%</span>
+                        <span class="mockup-value mockup-positive">[2.1%, 14.5%]</span>
+                    </div>
+                    <div class="mockup-row">
+                        <span class="mockup-label">Kelly 0.25x</span>
+                        <span class="mockup-value" style="color:var(--accent);">2.8 unidades</span>
+                    </div>
+                    <div class="mockup-row">
+                        <span class="mockup-label">Kill Switch</span>
+                        <span class="mockup-value mockup-positive"><i class="bi bi-shield-check"></i> OK</span>
+                    </div>
+                    <div class="mockup-row">
+                        <span class="mockup-label">Toluca vs Monterrey</span>
+                        <span class="mockup-value mockup-negative">Sin Edge</span>
+                    </div>
+                    <div class="mockup-row">
+                        <span class="mockup-label">Santos vs Tigres</span>
+                        <span class="mockup-value mockup-positive">Edge +5.7%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trust / Social Proof Bar -->
+<section class="trust-bar">
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center justify-content-center gap-3">
+            <span style="color:var(--text-secondary);font-size:0.85rem;font-weight:600;">Datos extraidos de:</span>
+            <span class="trust-badge">FBref</span>
+            <span class="trust-badge">Understat</span>
+            <span class="trust-badge">OddsPortal</span>
+            <span class="trust-badge">Betfair</span>
+            <span class="trust-badge">Sofascore</span>
+            <span class="trust-badge">WhoScored</span>
+            <span class="trust-badge">Transfermarkt</span>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3" style="color: var(--text-heading);">Todo lo que necesitas para ganarle al mercado</h2>
+            <p class="section-subtitle">
+                Mientras otros apuestan por corazonada, tu tendras un sistema que analiza
+                mas datos que cualquier tipster en Mexico — automatizado, cada jornada.
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-accent"><i class="bi bi-globe2"></i></div>
+                    <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">19 Fuentes por Partido</h3>
+                    <p class="small mb-0" style="color: var(--text-secondary);">
+                        Cruzamos datos de FBref, Understat, OddsPortal, Betfair, Sofascore, Transfermarkt y 13 fuentes mas.
+                        xG, PPDA, odds de 5 casas, volumen de mercado, lesiones, clima y contexto local.
+                        <strong style="color:var(--text-primary);">Mas datos que cualquier analista humano.</strong>
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-blue"><i class="bi bi-cpu"></i></div>
+                    <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">Detecta Donde el Mercado se Equivoca</h3>
+                    <p class="small mb-0" style="color: var(--text-secondary);">
+                        Nuestro motor compara las probabilidades reales contra las cuotas de Pinnacle, SBO, Betfair, Betsson y Caliente.
+                        Cuando hay una diferencia significativa, <strong style="color:var(--text-primary);">encontraste un Value Bet</strong>
+                        — una ventaja matematica a tu favor.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-accent"><i class="bi bi-bar-chart-line"></i></div>
+                    <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">1,000 Simulaciones por Apuesta</h3>
+                    <p class="small mb-0" style="color: var(--text-secondary);">
+                        No te decimos "creemos que gana America". Te decimos que hay un
+                        <strong style="color:var(--text-primary);">8.3% de ventaja con 95% de confianza estadistica</strong>,
+                        verificado con 1,000 simulaciones bootstrap. Si los numeros no pasan el filtro, no se recomienda.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-blue"><i class="bi bi-calculator"></i></div>
+                    <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">Te Dice Exactamente Cuanto Apostar</h3>
+                    <p class="small mb-0" style="color: var(--text-secondary);">
+                        Usando el criterio Kelly — la misma formula que usan los fondos de inversion — calculas el
+                        <strong style="color:var(--text-primary);">monto optimo por apuesta</strong>.
+                        Ni mas ni menos. Protege tu bankroll y maximiza tu crecimiento a largo plazo.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-accent"><i class="bi bi-shield-x"></i></div>
+                    <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">Te Protege de Malas Apuestas</h3>
+                    <p class="small mb-0" style="color: var(--text-secondary);">
+                        El Kill Switch bloquea automaticamente apuestas peligrosas: ventaja insuficiente,
+                        lineas movidas en contra, poca liquidez o mercados manipulados.
+                        <strong style="color:var(--text-primary);">Si no hay oportunidad real, el sistema te lo dice.</strong>
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-blue"><i class="bi bi-clipboard-data"></i></div>
+                    <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">Resultados Verificables, No Promesas</h3>
+                    <p class="small mb-0" style="color: var(--text-secondary);">
+                        Cada prediccion se registra automaticamente ANTES del partido. Despues ves el hit rate y ROI reales.
+                        <strong style="color:var(--text-primary);">Sin editar, sin borrar, sin excusas.</strong>
+                        Transparencia total — lo que ningun tipster te ofrece.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section" id="how-it-works">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3" style="color: var(--text-heading);">Tan simple como 1-2-3</h2>
+            <p class="section-subtitle">
+                Tu no tienes que hacer nada. El sistema trabaja automaticamente antes de cada jornada.
+            </p>
+        </div>
+        <div class="timeline">
+            <div class="timeline-step">
+                <div class="timeline-connector"></div>
+                <div class="timeline-number">1</div>
+                <div style="font-size:1.5rem;color:var(--accent);margin-bottom:0.75rem;">
+                    <i class="bi bi-cloud-download"></i>
+                </div>
+                <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">Recopilamos Todo</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Antes de cada jornada, nuestros bots rastrean 19 fuentes por partido: estadisticas avanzadas,
+                    cuotas de Pinnacle, SBO, Betfair, Betsson y Caliente, lesiones, clima y noticias. Todo automatico.
+                </p>
+            </div>
+            <div class="timeline-step">
+                <div class="timeline-connector"></div>
+                <div class="timeline-number">2</div>
+                <div style="font-size:1.5rem;color:var(--accent-red);margin-bottom:0.75rem;">
+                    <i class="bi bi-gear"></i>
+                </div>
+                <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">El Motor Encuentra las Oportunidades</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    En menos de 1 segundo, el motor cruza todos los datos, calcula probabilidades reales, las compara contra
+                    las cuotas del mercado y detecta donde hay ventaja matematica. Si no hay oportunidad, no te recomienda nada.
+                </p>
+            </div>
+            <div class="timeline-step">
+                <div class="timeline-number">3</div>
+                <div style="font-size:1.5rem;color:var(--accent);margin-bottom:0.75rem;">
+                    <i class="bi bi-trophy"></i>
+                </div>
+                <h3 class="h5 fw-bold mb-2" style="color: var(--text-heading);">Tu Decides con Datos</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Recibes un reporte claro: que apostar, en que casa, cuanto apostar y por que.
+                    Con intervalos de confianza, alertas de riesgo y el historial completo de aciertos para que veas si funciona.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing-section" id="pricing">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3" style="color: var(--text-heading);">Invierte en tu ventaja</h2>
+            <p class="section-subtitle">Menos de $10 pesos al dia por acceso al mismo tipo de analisis que usan los apostadores profesionales.</p>
+        </div>
+        <div class="row justify-content-center g-4">
+            <div class="col-lg-5 col-md-6">
+                <div class="pricing-card-free">
+                    <div class="text-center mb-4">
+                        <span class="badge badge-accent mb-3 px-3 py-2">Gratis</span>
+                        <div class="mb-2">
+                            <span class="pricing-amount pricing-amount-muted">$0</span>
+                            <span class="pricing-currency">MXN/mes</span>
+                        </div>
+                        <p style="color:var(--text-secondary);font-size:0.9rem;">Conoce la plataforma sin compromiso</p>
+                    </div>
+                    <ul class="list-unstyled pricing-features mb-4">
+                        <li><i class="bi bi-check2 me-2" style="color:var(--accent);"></i>Blog con analisis de cada jornada</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--accent);"></i>Tendencias y estadisticas generales</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--accent);"></i>Previews de partidos estelares</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--accent);"></i>Actualizaciones via RSS y redes</li>
+                    </ul>
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-outline-accent w-100 py-2">
+                        Crear Cuenta Gratis
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 col-md-6">
+                <div class="pricing-card-premium">
+                    <div class="pricing-popular-badge">Popular</div>
+                    <div class="text-center mb-4">
+                        <span class="badge badge-accent mb-3 px-3 py-2">Premium</span>
+                        <div class="mb-2">
+                            <span class="pricing-amount pricing-amount-accent">$299</span>
+                            <span class="pricing-currency">MXN/mes</span>
+                        </div>
+                        <p style="color:var(--text-secondary);font-size:0.9rem;">Tu arsenal completo de apuestas inteligentes</p>
+                    </div>
+                    <ul class="list-unstyled pricing-features mb-4">
+                        <li><i class="bi bi-check-circle-fill me-2" style="color:var(--accent);"></i>Todo lo de Gratis</li>
+                        <li><i class="bi bi-check-circle-fill me-2" style="color:var(--accent);"></i><strong>Value Bets cada jornada</strong> — donde apostar y en que casa</li>
+                        <li><i class="bi bi-check-circle-fill me-2" style="color:var(--accent);"></i><strong>Cuanto apostar</strong> — Kelly te dice el monto exacto</li>
+                        <li><i class="bi bi-check-circle-fill me-2" style="color:var(--accent);"></i><strong>Confianza estadistica</strong> — solo recomendaciones con IC 95%+</li>
+                        <li><i class="bi bi-check-circle-fill me-2" style="color:var(--accent);"></i><strong>Kill Switch automatico</strong> — te protege de apuestas riesgosas</li>
+                        <li><i class="bi bi-check-circle-fill me-2" style="color:var(--accent);"></i><strong>Backtesting transparente</strong> — hit rate y ROI reales, verificables</li>
+                        <li><i class="bi bi-check-circle-fill me-2" style="color:var(--accent);"></i><strong>Dashboard en vivo</strong> — todos los partidos analizados en un solo lugar</li>
+                        <li><i class="bi bi-check-circle-fill me-2" style="color:var(--accent);"></i><strong>Alertas de mercado</strong> — movimientos de linea y sharp money</li>
+                    </ul>
+                    <a asp-controller="Subscription" asp-action="Checkout" class="btn btn-accent w-100 py-2 btn-lg">
+                        <i class="bi bi-rocket-takeoff me-2"></i>Comenzar Premium
+                    </a>
+                </div>
+            </div>
+        </div>
+        <p class="text-center mt-4" style="color:var(--text-secondary);font-size:0.85rem;">
+            Cancela cuando quieras. Sin contratos. Pago seguro via Stripe. <strong style="color:var(--text-primary);">Una sola apuesta ganadora paga meses de suscripcion.</strong>
+        </p>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3" style="color: var(--text-heading);">Preguntas Frecuentes</h2>
+            <p class="section-subtitle">Resolvemos tus dudas antes de que empieces a ganar.</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion faq-accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                Que es un Value Bet?
+                            </button>
+                        </h3>
+                        <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Imagina que encuentras un boleto de loteria que vale $100 pero lo venden en $80. Eso es un Value Bet.
+                                Las casas de apuestas cometen errores al calcular probabilidades — especialmente en Liga MX donde hay
+                                menos liquidez que en ligas europeas. Nuestro motor detecta esos errores analizando mas datos que las
+                                propias casas. No predecimos ganadores: encontramos donde las cuotas estan mal calculadas y ahi es
+                                donde tu tienes ventaja matematica.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                Como funciona el motor estadistico?
+                            </button>
+                        </h3>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Para cada partido evaluamos 8 dimensiones: poder ofensivo (xG), solidez defensiva (PPDA),
+                                historial directo, balon parado, descanso, localia, rendimiento del portero y presion en minutos finales.
+                                Todo se cruza con las cuotas de 5 casas de apuestas para encontrar discrepancias. Luego corremos
+                                1,000 simulaciones para asegurarnos de que la ventaja es real y no solo suerte.
+                                Si el 95% de las simulaciones confirman ventaja, te lo recomendamos. Si no, te decimos que no apuestes.
+                                Asi de simple.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                Que incluye la suscripcion Premium?
+                            </button>
+                        </h3>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Con Premium ves exactamente lo que nuestro motor detecta cada jornada: que partidos tienen ventaja,
+                                en que casa apostar, cuanto apostar, y por que. Ademas, ves el historial completo de predicciones
+                                anteriores con resultados reales — nada editado, nada borrado. Tambien recibes alertas cuando el
+                                mercado se mueve (sharp money, movimientos de linea sospechosos) y el sistema te bloquea automaticamente
+                                apuestas que no cumplen los filtros de seguridad. Es como tener un analista cuantitativo trabajando
+                                para ti 24/7 por menos de lo que cuesta un cafe al dia.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                Puedo cancelar en cualquier momento?
+                            </button>
+                        </h3>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Si, cero compromisos. Cancelas desde tu perfil en 2 clicks y listo. Stripe (la misma
+                                plataforma que usan Netflix, Amazon y Shopify) maneja el pago de forma segura. Si cancelas,
+                                mantienes acceso hasta el final del mes que ya pagaste. Sin letras chiquitas, sin trucos.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                De donde vienen los datos?
+                            </button>
+                        </h3>
+                        <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Usamos las mismas fuentes que los analistas profesionales: FBref y Understat para estadisticas
+                                avanzadas (xG, PPDA), OddsPortal para cuotas de 50+ casas, Betfair Exchange para volumen de mercado,
+                                Sofascore y WhoScored para metricas tacticas, Transfermarkt para lesiones y valores de plantilla.
+                                Ademas, cruzamos con Liga MX oficial, ESPN, TUDN, Mediotiempo, clima y datos de Concacaf.
+                                Son 19 fuentes por partido, actualizadas automaticamente antes de cada jornada. Ningun humano puede
+                                procesar todo esto en tiempo real — pero nuestro motor si.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final-cta">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="cta-card-wrapper">
+                    <div class="cta-card-inner">
+                        <div class="cta-glow"></div>
+                        <h2 class="fw-bold mb-3 position-relative" style="color: var(--text-heading);">Cada jornada que pasa sin datos, es dinero que dejas en la mesa</h2>
+                        <p class="mb-4 position-relative" style="color:var(--text-secondary);max-width:600px;margin:0 auto;">
+                            Las casas de apuestas ganan porque la mayoria apuesta con el corazon.
+                            Tu vas a apostar con matematicas. 19 fuentes, 1,000 simulaciones, 95% de confianza.
+                            Una sola apuesta inteligente paga meses de suscripcion.
+                        </p>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap position-relative">
+                            <a href="#pricing" class="btn btn-accent btn-lg px-4 py-2">
+                                <i class="bi bi-rocket-takeoff me-2"></i>Comenzar Premium
+                            </a>
+                            <a asp-controller="Blog" asp-action="Index" class="btn btn-outline-accent btn-lg px-4 py-2">
+                                <i class="bi bi-journal-text me-2"></i>Leer Blog
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "WebSite",
+    "name": "Ollin",
+    "url": "https://ollin.mx",
+    "description": "Apuestas inteligentes para Liga MX. Analisis de 19 fuentes, 1000 simulaciones por partido, ventaja matematica verificable. Deja de apostar a ciegas.",
+    "potentialAction": {
+        "@@type": "SearchAction",
+        "target": "https://ollin.mx/Blog?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+    }
+}
+</script>
+}
