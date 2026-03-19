@@ -53,20 +53,35 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// ── Seed Admin User ─────────────────────────────────────────────────────────
+// ── Auto-migrate + Seed Admin User ──────────────────────────────────────────
 using (var seedScope = app.Services.CreateScope())
 {
     var sp = seedScope.ServiceProvider;
     try
     {
+        var db = sp.GetRequiredService<TlatoaniDbContext>();
+
+        // Apply pending migrations automatically on startup
+        if ((await db.Database.GetPendingMigrationsAsync()).Any())
+        {
+            try { await db.Database.MigrateAsync(); }
+            catch { /* tables may already exist, continue */ }
+        }
+
+        // Ensure roles exist
         var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+        foreach (var role in new[] { "Admin", "Free", "Premium" })
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+                await roleManager.CreateAsync(new IdentityRole(role));
+        }
+
+        // Seed admin user
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
-
-        if (!await roleManager.RoleExistsAsync("Admin"))
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
-
         var adminEmail = "admin@ollin.mx";
-        var admin = await userManager.FindByEmailAsync(adminEmail);
+        var admin = await userManager.FindByEmailAsync(adminEmail)
+                 ?? await userManager.FindByNameAsync("Admin");
+
         if (admin == null)
         {
             admin = new ApplicationUser
@@ -81,15 +96,23 @@ using (var seedScope = app.Services.CreateScope())
             if (result.Succeeded)
                 await userManager.AddToRoleAsync(admin, "Admin");
         }
-        else if (!await userManager.IsInRoleAsync(admin, "Admin"))
+        else
         {
-            await userManager.AddToRoleAsync(admin, "Admin");
+            // Fix old seed that used UserName="Admin" instead of email
+            if (admin.UserName != adminEmail)
+            {
+                admin.UserName = adminEmail;
+                admin.NormalizedUserName = adminEmail.ToUpperInvariant();
+                await userManager.UpdateAsync(admin);
+            }
+            if (!await userManager.IsInRoleAsync(admin, "Admin"))
+                await userManager.AddToRoleAsync(admin, "Admin");
         }
     }
     catch (Exception ex)
     {
         var logger = sp.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning(ex, "Admin seed failed (DB may not be ready yet)");
+        logger.LogWarning(ex, "Startup seed failed (DB may not be ready). App continues normally.");
     }
 }
 
