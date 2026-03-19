@@ -1,0 +1,197 @@
+@{
+    ViewData["Title"] = "Administracion";
+    ViewData["ActiveNav"] = "Admin";
+}
+
+<section class="py-5">
+    <div class="container">
+        <h2 class="fw-bold mb-4"><i class="bi bi-gear me-2" style="color: var(--accent);"></i>Panel de Administracion</h2>
+
+        <div class="row g-4">
+            <!-- Migraciones -->
+            <div class="col-lg-6">
+                <div class="card-dark p-4 mb-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-database-gear me-2" style="color: var(--accent);"></i>Base de Datos</h5>
+                    <div id="dbConnectionInfo" class="mb-3">
+                        <div class="text-center py-2" style="color: var(--text-secondary);">
+                            <div class="spinner-border spinner-border-sm me-1"></div> Verificando conexion...
+                        </div>
+                    </div>
+                    <div id="migrationsList" class="mb-3"></div>
+                    <button class="btn btn-accent w-100" id="btnMigrate" onclick="applyMigrations()">
+                        <i class="bi bi-arrow-up-circle me-2"></i>Aplicar Migraciones Pendientes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tablas -->
+            <div class="col-lg-6">
+                <div class="card-dark p-4 mb-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-table me-2" style="color: var(--accent);"></i>Tablas</h5>
+                    <div id="tablesInfo">
+                        <div class="text-center py-2" style="color: var(--text-secondary);">
+                            <div class="spinner-border spinner-border-sm me-1"></div> Cargando...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usuarios -->
+                <div class="card-dark p-4 mb-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-people me-2" style="color: var(--accent);"></i>Usuarios</h5>
+                    <div id="usersList">
+                        <div class="text-center py-2" style="color: var(--text-secondary);">
+                            <div class="spinner-border spinner-border-sm me-1"></div> Cargando...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export + Danger Zone -->
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card-dark p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-download me-2" style="color: var(--accent);"></i>Exportar CSV</h5>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-accent btn-sm" onclick="exportDayCsv()">
+                            <i class="bi bi-calendar-day me-1"></i>Hoy
+                        </button>
+                        <button class="btn btn-outline-accent btn-sm" onclick="exportDayCsvPicker()">
+                            <i class="bi bi-calendar-event me-1"></i>Por dia...
+                        </button>
+                        <a href="/Admin/ExportWeekCsv" class="btn btn-outline-accent btn-sm">
+                            <i class="bi bi-calendar-week me-1"></i>Semana actual
+                        </a>
+                    </div>
+                    <input type="date" id="exportDatePicker" class="d-none" />
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card-dark p-4" style="border: 1px solid var(--accent-red);">
+                    <h5 class="fw-bold mb-3" style="color: var(--accent-red);"><i class="bi bi-exclamation-triangle me-2"></i>Zona de Peligro</h5>
+                    <button class="btn btn-outline-danger w-100" onclick="clearAllData()">
+                        <i class="bi bi-trash me-2"></i>Eliminar TODOS los Registros
+                    </button>
+                    <small class="d-block mt-2" style="color: var(--text-secondary);">Analyses, predictions, summaries, scanned matches, cache. No se puede deshacer.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    async function safeFetch(url, opts) {
+        const resp = await fetch(url, opts);
+        const text = await resp.text();
+        try { return JSON.parse(text); } catch { return { success: false, error: 'Respuesta no JSON' }; }
+    }
+
+    async function loadDbStatus() {
+        const data = await safeFetch('/Admin/DbStatus');
+        const connEl = document.getElementById('dbConnectionInfo');
+        const migrEl = document.getElementById('migrationsList');
+        const tablesEl = document.getElementById('tablesInfo');
+
+        if (!data.success || !data.connected) {
+            connEl.innerHTML = `<div class="alert alert-danger py-2 mb-0">${data.error || 'No conectado'}</div>`;
+            return;
+        }
+
+        connEl.innerHTML = `<div class="alert alert-success py-2 mb-0"><i class="bi bi-check-circle me-2"></i>Conectado — ${data.provider || 'PostgreSQL'}</div>`;
+
+        // Migrations
+        let mHtml = '';
+        if (data.pendingMigrations.length > 0) {
+            mHtml += `<div class="alert alert-warning py-2 mb-2"><strong>${data.pendingMigrations.length} pendiente(s)</strong></div>`;
+            data.pendingMigrations.forEach(m => { mHtml += `<div class="mb-1"><span class="badge" style="background:var(--accent);">Pendiente</span> <small class="font-monospace">${m}</small></div>`; });
+        } else {
+            mHtml += `<div class="alert alert-success py-2 mb-2"><i class="bi bi-check-circle me-2"></i>Todas aplicadas</div>`;
+        }
+        if (data.appliedMigrations.length > 0) {
+            mHtml += `<details class="mt-2"><summary style="cursor:pointer;color:var(--text-secondary);" class="small">Aplicadas (${data.appliedMigrations.length})</summary><div class="mt-1">`;
+            data.appliedMigrations.forEach(m => { mHtml += `<div class="mb-1"><span class="badge bg-success" style="font-size:0.55rem;">OK</span> <small class="font-monospace" style="font-size:0.7rem;">${m}</small></div>`; });
+            mHtml += '</div></details>';
+        }
+        migrEl.innerHTML = mHtml;
+        document.getElementById('btnMigrate').disabled = data.pendingMigrations.length === 0;
+
+        // Tables
+        const t = data.tables;
+        const tables = [
+            { name: 'Analyses', key: 'analyses', count: t.analyses, icon: 'bi-bar-chart' },
+            { name: 'Predictions', key: 'predictions', count: t.predictions, icon: 'bi-bullseye' },
+            { name: 'Jornada Summaries', key: 'summaries', count: t.summaries, icon: 'bi-list-check' },
+            { name: 'Scanned Matches', key: 'scanned', count: t.scanned, icon: 'bi-trophy' },
+            { name: 'Scraped Cache', key: 'cache', count: t.cache, icon: 'bi-cloud-download' },
+            { name: 'Usuarios', key: null, count: t.users, icon: 'bi-people' }
+        ];
+        let tHtml = '';
+        tables.forEach(tbl => {
+            tHtml += `<div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid var(--border-color);">
+                <div><i class="bi ${tbl.icon} me-2" style="color:var(--text-secondary);"></i>${tbl.name}</div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary">${tbl.count}</span>
+                    ${tbl.key && tbl.count > 0 ? `<button class="btn btn-outline-danger btn-sm py-0 px-1" onclick="clearTable('${tbl.key}')"><i class="bi bi-trash" style="font-size:0.7rem;"></i></button>` : ''}
+                </div>
+            </div>`;
+        });
+        tablesEl.innerHTML = tHtml;
+    }
+
+    async function loadUsers() {
+        const data = await safeFetch('/Admin/Users');
+        const el = document.getElementById('usersList');
+        if (!data.success || !data.users?.length) {
+            el.innerHTML = '<p class="small" style="color:var(--text-secondary);">Sin usuarios</p>';
+            return;
+        }
+        let html = '';
+        data.users.forEach(u => {
+            const roles = u.roles.length > 0 ? u.roles.map(r => `<span class="badge" style="background:var(--accent);">${r}</span>`).join(' ') : '<span class="badge bg-secondary">Free</span>';
+            html += `<div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid var(--border-color);">
+                <div><i class="bi bi-person me-2"></i>${u.userName} <small style="color:var(--text-secondary);">${u.email || ''}</small></div>
+                <div>${roles} <span class="badge bg-secondary ms-1">${u.subscriptionTier}</span></div>
+            </div>`;
+        });
+        el.innerHTML = html;
+    }
+
+    async function applyMigrations() {
+        const btn = document.getElementById('btnMigrate');
+        btn.disabled = true; btn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Aplicando...';
+        const data = await safeFetch('/Admin/ApplyMigrations', { method: 'POST' });
+        alert(data.message || data.error);
+        btn.innerHTML = '<i class="bi bi-arrow-up-circle me-2"></i>Aplicar Migraciones Pendientes';
+        loadDbStatus();
+    }
+
+    async function clearTable(table) {
+        if (!confirm(`Eliminar todos los registros de "${table}"?`)) return;
+        const data = await safeFetch(`/Admin/ClearTable?table=${table}`, { method: 'POST' });
+        alert(data.message || data.error);
+        loadDbStatus();
+    }
+
+    async function clearAllData() {
+        if (!confirm('ELIMINAR TODOS los registros?\nNo se puede deshacer.')) return;
+        if (!confirm('Confirmar?')) return;
+        const data = await safeFetch('/Admin/ClearAllData', { method: 'POST' });
+        alert(data.message || data.error);
+        loadDbStatus();
+    }
+
+    function exportDayCsv() {
+        window.location.href = `/Admin/ExportDayCsv?date=${new Date().toISOString().split('T')[0]}`;
+    }
+    function exportDayCsvPicker() {
+        const p = document.getElementById('exportDatePicker');
+        p.onchange = () => { if (p.value) window.location.href = `/Admin/ExportDayCsv?date=${p.value}`; };
+        p.showPicker();
+    }
+
+    // Init
+    loadDbStatus();
+    loadUsers();
+</script>
+}

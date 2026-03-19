@@ -22,6 +22,8 @@ public class TlatoaniDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<TeamSeasonStats> TeamSeasonStats => Set<TeamSeasonStats>();
     public DbSet<PlayerSeasonStats> PlayerSeasonStats => Set<PlayerSeasonStats>();
     public DbSet<AnomalyLog> AnomalyLogs => Set<AnomalyLog>();
+    public DbSet<ScannedMatch> ScannedMatches => Set<ScannedMatch>();
+    public DbSet<ScrapedDataCache> ScrapedDataCaches => Set<ScrapedDataCache>();
 
     // Web entities
     public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
@@ -88,6 +90,19 @@ public class TlatoaniDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<AnomalyLog>(entity =>
         {
             entity.ToTable("anomaly_logs", "core");
+        });
+
+        builder.Entity<ScannedMatch>(entity =>
+        {
+            entity.ToTable("scanned_matches", "core");
+            entity.HasIndex(e => new { e.Jornada, e.MatchName }).IsUnique();
+        });
+
+        builder.Entity<ScrapedDataCache>(entity =>
+        {
+            entity.ToTable("scraped_data_cache", "core");
+            entity.HasIndex(e => new { e.MatchName, e.SourceName });
+            entity.HasIndex(e => e.ExpiresAt);
         });
 
         // ── Web schema ───────────────────────────────────────────────

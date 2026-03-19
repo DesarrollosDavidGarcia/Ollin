@@ -500,6 +500,14 @@
                                     <i class="bi bi-speedometer2 me-1"></i>Dashboard
                                 </a>
                             </li>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Admin" ? "active" : "")" asp-controller="Admin" asp-action="Index">
+                                        <i class="bi bi-gear me-1"></i>Admin
+                                    </a>
+                                </li>
+                            }
                         }
                     </ul>
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">

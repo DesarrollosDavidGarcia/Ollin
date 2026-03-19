@@ -20,6 +20,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireLowercase = true;
     options.SignIn.RequireConfirmedAccount = false;
 })
+.AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<TlatoaniDbContext>()
 .AddDefaultTokenProviders();
 
@@ -51,6 +52,45 @@ builder.Services.AddHostedService(sp => (BlogGenerationService)sp.GetRequiredSer
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+// ── Seed Admin User ─────────────────────────────────────────────────────────
+using (var seedScope = app.Services.CreateScope())
+{
+    var sp = seedScope.ServiceProvider;
+    try
+    {
+        var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+
+        if (!await roleManager.RoleExistsAsync("Admin"))
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+
+        var admin = await userManager.FindByNameAsync("Admin");
+        if (admin == null)
+        {
+            admin = new ApplicationUser
+            {
+                UserName = "Admin",
+                Email = "admin@ollin.mx",
+                DisplayName = "Administrador",
+                SubscriptionTier = "Premium",
+                EmailConfirmed = true
+            };
+            var result = await userManager.CreateAsync(admin, "Prueba@123");
+            if (result.Succeeded)
+                await userManager.AddToRoleAsync(admin, "Admin");
+        }
+        else if (!await userManager.IsInRoleAsync(admin, "Admin"))
+        {
+            await userManager.AddToRoleAsync(admin, "Admin");
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = sp.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(ex, "Admin seed failed (DB may not be ready yet)");
+    }
+}
 
 // ── Middleware Pipeline ─────────────────────────────────────────────────────
 if (!app.Environment.IsDevelopment())
