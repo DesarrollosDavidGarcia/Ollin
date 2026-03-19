@@ -65,13 +65,14 @@ using (var seedScope = app.Services.CreateScope())
         if (!await roleManager.RoleExistsAsync("Admin"))
             await roleManager.CreateAsync(new IdentityRole("Admin"));
 
-        var admin = await userManager.FindByNameAsync("Admin");
+        var adminEmail = "admin@ollin.mx";
+        var admin = await userManager.FindByEmailAsync(adminEmail);
         if (admin == null)
         {
             admin = new ApplicationUser
             {
-                UserName = "Admin",
-                Email = "admin@ollin.mx",
+                UserName = adminEmail,
+                Email = adminEmail,
                 DisplayName = "Administrador",
                 SubscriptionTier = "Premium",
                 EmailConfirmed = true
